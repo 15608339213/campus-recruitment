@@ -1,0 +1,96 @@
+name,type,aliases
+阿里巴巴,民企,阿里|Alibaba|alibaba|阿里集团|阿里巴巴集团
+腾讯,民企,Tencent|tencent|腾讯科技|鹅厂
+字节跳动,民企,字节|ByteDance|bytedance|今日头条|抖音|toutiao
+华为,民企,Huawei|huawei|华为技术|华为终端
+京东,民企,JD|jd.com|京东集团|京东商城
+百度,民企,Baidu|baidu|百度在线
+美团,民企,Meituan|meituan|美团点评
+拼多多,民企,PDD|pinduoduo|拼多多电商
+网易,民企,NetEase|netease|网易雷火|网易互娱
+小米,民企,Xiaomi|xiaomi|小米科技|小米集团
+滴滴,民企,滴滴出行|Didi|didi|小桔科技
+快手,民企,Kuaishou|kuaishou|快手科技
+哔哩哔哩,民企,B站|bilibili|BILI|哔哩
+比亚迪,民企,BYD|byd|比亚迪股份
+大疆,民企,DJI|dji|大疆创新
+蔚来,民企,NIO|nio|蔚来汽车
+理想汽车,民企,LiAuto|李想|理想智造
+小鹏汽车,民企,XPeng|xpeng|小鹏
+奇安信,民企,QiAnXin|qianxin|奇安信科技
+360,民企,奇虎360|Qihoo|三六零
+海康威视,民企,Hikvision|hikvision|海康
+格力,民企,Gree|gree|格力电器
+美的,民企,Midea|midea|美的集团
+海尔,民企,Haier|haier|海尔智家
+联想,民企,Lenovo|lenovo|联想集团
+vivo,民企,vivo移动通信
+OPPO,民企,广东欧珀|OPPO软件
+荣耀,民企,Honor|honor|荣耀终端
+搜狐,民企,Sohu|sohu|搜狐网络
+新浪,民企,Sina|sina|新浪网|微博
+携程,民企,Ctrip|ctrip|Trip.com|携程旅行
+贝壳,民企,Beike|beike|贝壳找房
+米哈游,民企,miHoYo|mihoyo|米哈游科技
+莉莉丝,民企,Lilith|lilith|莉莉丝游戏
+完美世界,民企,Perfect World|perfectworld|完美世界游戏
+西山居,民企,Seasun|seasun|金山西山居
+金山软件,民企,Kingsoft|kingsoft|金山办公|WPS
+商汤科技,民企,SenseTime|sensetime|商汤
+旷视科技,民企,Megvii|megvii|旷视|Face++
+科大讯飞,民企,iFlyTek|iflytek|讯飞
+中国石油,国企,中石油|CNPC|PetroChina|中国石油天然气
+中国石化,国企,中石化|Sinopec|中国石油化工
+国家电网,国企,State Grid|国网|SGCC|国家电网公司
+中国移动,国企,China Mobile|中移动|中国移动通信
+中国电信,国企,China Telecom|中电信|中国电信集团
+中国联通,国企,China Unicom|中联通|中国联合网络通信
+中国银行,国企,BOC|中行|中国银行股份
+工商银行,国企,ICBC|工行|中国工商银行
+农业银行,国企,ABC|农行|中国农业银行
+建设银行,国企,CCB|建行|中国建设银行
+交通银行,国企,BOCOM|交行|交通银行股份
+中国邮政,国企,中国邮政集团|China Post|邮政储蓄|邮储银行
+中国建筑,国企,中建|CSCEC|中国建筑集团
+中国中铁,国企,中铁|CREC|中国中铁股份
+中国铁建,国企,中铁建|CRCC|中国铁建股份
+中粮集团,国企,中粮|COFCO|中粮集团有限
+华润集团,国企,华润|China Resources|华润置地
+招商局,国企,招商局集团|China Merchants|招商蛇口
+中信集团,国企,中信|CITIC|中信集团|中信证券
+中国中车,国企,中车|CRRC|中国中车股份
+中国航天科技,国企,航天科技|CASC|中国航天科技集团
+中国航天科工,国企,航天科工|CASIC|中国航天科工集团
+中国电科,国企,电科|CETC|中国电子科技集团
+中国兵器工业,国企,兵器工业|NORINCO|中国兵器工业集团
+中国一汽,国企,一汽|FAW|中国第一汽车集团
+东风汽车,国企,东风|DFM|东风汽车集团
+国家能源集团,国企,国能|CHN Energy|国家能源投资集团
+华能集团,国企,华能|CHNG|中国华能集团
+大唐集团,国企,大唐|CHN Energy Datang|中国大唐集团
+华电集团,国企,华电|CHD|中国华电集团
+中核集团,国企,中核|CNNC|中国核工业集团
+宝武钢铁,国企,宝武|Baowu|中国宝武钢铁集团
+鞍钢集团,国企,鞍钢|Ansteel|鞍山钢铁集团
+微软,外企,Microsoft|microsoft|微软中国
+谷歌,外企,Google|google|谷歌中国
+亚马逊,外企,Amazon|amazon|AWS|亚马逊云
+苹果,外企,Apple|apple|苹果中国
+英特尔,外企,Intel|intel|英特尔中国
+英伟达,外企,NVIDIA|nvidia|英伟达中国
+高通,外企,Qualcomm|qualcomm|高通无线通信
+思科,外企,Cisco|cisco|思科系统
+IBM,外企,International Business Machines
+SAP,外企,SAP中国|思爱普
+三星,外企,Samsung|samsung|三星中国
+索尼,外企,Sony|sony|索尼中国
+德勤,外企,Deloitte|deloitte|德勤咨询
+普华永道,外企,PwC|pwc|普华永道咨询
+安永,外企,EY|ernst young|安永华明
+毕马威,外企,KPMG|kpmg|毕马威华振
+麦肯锡,外企,McKinsey|mckinsey|麦肯锡咨询
+波士顿咨询,外企,BCG|Boston Consulting|波士顿
+中国科学院,事业单位,中科院|CAS|中国科学院大学
+中国社会科学院,事业单位,社科院|CASS
+中国工程物理研究院,事业单位,九院|CAEP|工程物理研究院
+国家信息中心,事业单位,国家信息中心

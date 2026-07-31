@@ -1,0 +1,39 @@
+# ============================================================
+# Fly.io 部署配置
+#
+# 部署命令：
+#   fly launch --no-deploy   # 首次初始化（会读取本文件）
+#   fly deploy               # 部署
+#   fly secrets set SECRET_KEY=xxx DATABASE_URL=xxx  # 设置密钥
+# ============================================================
+
+app = "campus-recruitment-backend"
+primary_region = "nrt"  # 东京节点，离中国最近
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_ENV = "production"
+  DEBUG = "false"
+  API_V1_PREFIX = "/api/v1"
+  PORT = "8000"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1  # 至少保持 1 台运行，避免休眠
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+# 资源规格（免费额度内）
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
