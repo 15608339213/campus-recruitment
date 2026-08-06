@@ -5,7 +5,8 @@ WORKDIR /app
 
 # 先复制依赖文件，利用 Docker 缓存层
 COPY package.json package-lock.json* ./
-RUN npm ci --prefer-offline || npm install
+# 使用腾讯云 npm 镜像加速
+RUN npm config set registry https://mirrors.cloud.tencent.com/npm/ && npm ci --prefer-offline || npm install
 
 # 复制源代码
 COPY . .

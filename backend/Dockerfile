@@ -14,6 +14,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# 替换 apt 源为腾讯云镜像（国内加速）
+RUN sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources
+
 # 安装系统依赖（编译 asyncpg / bcrypt 等需要）
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -26,7 +29,7 @@ COPY requirements.txt .
 # 注释掉 playwright 行（部署时不需要浏览器自动化，减小镜像体积约 500MB）
 RUN sed -i 's/^playwright/# playwright/' requirements.txt
 
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN pip install --user --no-cache-dir -i https://mirrors.cloud.tencent.com/pypi/simple -r requirements.txt
 
 # ===== 运行阶段 =====
 FROM python:3.11-slim AS runtime
@@ -36,6 +39,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH=/root/.local/bin:$PATH
 
 WORKDIR /app
+
+# 替换 apt 源为腾讯云镜像（国内加速）
+RUN sed -i 's|http://deb.debian.org|http://mirrors.cloud.tencent.com|g' /etc/apt/sources.list.d/debian.sources
 
 # 仅安装运行时必要的系统库
 RUN apt-get update && apt-get install -y --no-install-recommends \
