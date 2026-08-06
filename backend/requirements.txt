@@ -18,13 +18,14 @@ email-validator==2.2.0
 # ===== 安全（JWT + 密码哈希）=====
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-bcrypt==4.2.1
+# bcrypt 4.1+ 与 passlib 不兼容，锁定 4.0.1
+bcrypt==4.0.1
 
 # ===== HTTP 客户端（调用 DeepSeek API / 爬虫）=====
 httpx==0.28.1
 
-# ===== 爬虫（暂未实现，保留依赖）=====
-playwright==1.49.1
+# ===== Vercel Serverless 适配（WSGI 包装 ASGI）=====
+a2wsgi==1.10.10
 
 # ===== OAuth =====
 authlib==1.4.1
