@@ -320,12 +320,12 @@ async def add_favorite(
 
 
 # ===== 取消收藏 =====
-@router.delete("/{job_id}/favorite", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{job_id}/favorite", status_code=status.HTTP_200_OK)
 async def remove_favorite(
     job_id: int,
     current_user: CurrentUser,
     db: DBSession,
-) -> None:
+) -> dict:
     """取消收藏岗位。"""
     result = await db.execute(
         select(Favorite).where(
@@ -341,3 +341,4 @@ async def remove_favorite(
         )
     await db.delete(favorite)
     await db.commit()
+    return {"message": "已取消收藏"}

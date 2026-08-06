@@ -166,12 +166,12 @@ async def update_provider_config(
 
 
 # ===== 删除提供商配置 =====
-@router.delete("/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{config_id}", status_code=status.HTTP_200_OK)
 async def delete_provider_config(
     config_id: int,
     current_user: CurrentUser,
     db: DBSession,
-) -> None:
+) -> dict:
     """删除 AI 提供商配置。"""
     result = await db.execute(
         select(AIProviderConfig).where(
@@ -185,6 +185,7 @@ async def delete_provider_config(
 
     await db.delete(config)
     await db.commit()
+    return {"message": "删除成功"}
 
 
 # ===== 测试连接 =====
