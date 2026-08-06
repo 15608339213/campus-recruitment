@@ -11,8 +11,8 @@ RUN npm config set registry https://mirrors.cloud.tencent.com/npm/ && npm ci --p
 # 复制源代码
 COPY . .
 
-# 构建参数：API 地址（构建时注入）
-ARG VITE_API_BASE_URL=http://localhost:8000
+# 构建参数：API 地址（构建时注入，不传则默认走 nginx 反向代理 /api/v1）
+ARG VITE_API_BASE_URL=/api/v1
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 # 构建生产版本
