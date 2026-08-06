@@ -1,328 +1,311 @@
-# 秋招助手 24 小时在线部署指南
+# 秋招助手 - 腾讯云部署指南
 
-> 目标：把项目部署到免费云平台，实现 24 小时随时访问，任何人都能通过网址访问。
+> 基于 Docker Compose 一键部署全栈应用到腾讯云轻量服务器。
+> 适合学生和个人开发者，一台服务器搞定前端+后端+数据库。
 
 ## 架构总览
 
 ```
 用户浏览器
     ↓
-Vercel（前端网页，自带 CDN + HTTPS）
-    ↓ 调用 API
-Fly.io（后端 API 服务，永不休眠）
+腾讯云轻量服务器（公网 IP）
+    ↓
+Nginx（80 端口，前端静态资源 + API 反向代理）
+    ↓ /api/ 转发
+FastAPI 后端（Docker 容器，8000 端口）
     ↓ 读写数据
-Supabase（PostgreSQL 数据库，免费 500MB）
+PostgreSQL 15（Docker 容器，5432 端口）
+Redis 7（Docker 容器，6379 端口）
 ```
 
-**最终效果**：
-- 前端网址：`https://campus-recruitment.vercel.app`（示例）
-- 后端 API：`https://campus-recruitment-backend.fly.dev/docs`
-- 24 小时在线，任何人可访问
-
-**预计耗时**：30-60 分钟
-**费用**：完全免费（各平台免费额度内）
+**访问地址**：`http://你的服务器IP`
+**管理面板**：`http://你的服务器IP/api/v1/docs`
+**管理员账号**：admin@campus.com / admin123
 
 ---
 
-## 第一步：推送代码到 GitHub
+## 第一步：购买腾讯云服务器
 
-### 1.1 在 GitHub 创建空仓库
+### 1.1 学生认证（享受学生优惠）
 
-1. 打开 https://github.com/new
-2. Repository name 填：`campus-recruitment`
-3. 选择 **Public**（开源项目）
-4. **不要**勾选 "Add a README file"（项目已有）
-5. 点击 **Create repository**
+1. 打开 https://cloud.tencent.com/act/campus
+2. 点击"学生认证"，用学信网信息完成认证
+3. 认证后可享受学生折扣价
 
-### 1.2 本地初始化并推送
+### 1.2 购买轻量应用服务器
 
-在项目根目录 `d:\trae\秋招网站` 打开终端，依次执行：
+1. 选择"轻量应用服务器 2核2G"
+2. 配置：
+   - **地域**：北京/上海/广州（选离你最近的）
+   - **镜像**：Ubuntu 22.04 LTS（推荐）
+   - **带宽**：4M/每月 300GB 流量（够用）
+   - **时长**：1年（学生价约 100 元/年）
+3. 购买成功后，记住服务器的**公网 IP**和初始密码
 
-```bash
-# 初始化 git 仓库
-git init
-git branch -M main
+### 1.3 开放防火墙端口
 
-# 添加所有文件（.gitignore 会自动排除敏感文件和 node_modules）
-git add .
+在腾讯云控制台 → 轻量服务器 → 防火墙，添加规则：
 
-# 首次提交
-git commit -m "feat: 秋招助手开源网站初始版本"
+| 协议 | 端口 | 说明 |
+|------|------|------|
+| TCP | 80 | HTTP 前端访问 |
+| TCP | 443 | HTTPS（可选，后续配域名时用） |
+| TCP | 22 | SSH 连接（默认已开放） |
 
-# 关联远程仓库（把 your-username 换成你的 GitHub 用户名）
-git remote add origin https://github.com/your-username/campus-recruitment.git
-
-# 推送
-git push -u origin main
-```
-
-> 推送后刷新 GitHub 页面，确认代码已上传。
+> 不需要开放 5432/6379/8000，这些端口只在 Docker 内网使用。
 
 ---
 
-## 第二步：创建 Supabase 数据库
+## 第二步：连接服务器并安装 Docker
 
-### 2.1 注册并创建项目
-
-1. 打开 https://supabase.com，点击 **Start your project**，用 GitHub 登录
-2. 点击 **New Project**
-3. 填写：
-   - Name：`campus-recruitment`
-   - Database Password：**生成一个强密码并保存好**（后面要用）
-   - Region：`Southeast Asia (Singapore)` 或 `East Asia`
-4. 点击 **Create new project**，等待约 2 分钟初始化
-
-### 2.2 获取数据库连接串
-
-1. 进入项目后，左侧菜单点击 **Project Settings**（齿轮图标）
-2. 点击 **Database**
-3. 找到 **Connection string** 区域，选择 **URI** 格式
-4. 复制连接串，格式类似：
-   ```
-   postgresql://postgres.[你的项目ID]:[你的密码]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
-   ```
-
-### 2.3 转为 asyncpg 格式
-
-把连接串中的 `postgresql://` 改为 `postgresql+asyncpg://`：
-
-```
-postgresql+asyncpg://postgres.[项目ID]:[密码]@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
-```
-
-> **保存这个连接串**，下一步要用。
-
-### 2.4 初始化数据库表
-
-在 Supabase 的 SQL Editor 中执行以下 SQL（创建所有表）：
-
-1. 左侧菜单点击 **SQL Editor**
-2. 点击 **New query**
-3. 复制粘贴项目 `scripts/init_db.py` 生成的 SQL，或直接在本地运行：
+### 2.1 SSH 连接服务器
 
 ```bash
-# 本地临时设置数据库连接，运行初始化脚本
-cd d:\trae\秋招网站\backend
-set DATABASE_URL=postgresql+asyncpg://postgres.[项目ID]:[密码]@aws-0-xxx.supabase.com:5432/postgres
-python ..\scripts\init_db.py
+# 用你的服务器 IP 替换
+ssh ubuntu@你的服务器IP
 ```
 
-> 也可以先跳过这步，后端首次启动时开发模式会自动建表（但生产模式需手动）。
+输入初始密码登录（首次登录会提示修改密码）。
+
+### 2.2 安装 Docker
+
+```bash
+# 一键安装 Docker
+curl -fsSL https://get.docker.com | sudo sh
+
+# 启动 Docker 并设置开机自启
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 验证安装
+docker --version
+docker compose version
+```
+
+### 2.3 配置 Docker 镜像加速（国内必做）
+
+```bash
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://docker.mirrors.ustc.edu.cn"
+  ]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
 
 ---
 
-## 第三步：部署后端到 Fly.io
+## 第三步：拉取代码并部署
 
-### 3.1 安装 flyctl CLI
-
-```powershell
-# PowerShell 管理员模式运行
-iwr https://fly.io/install.ps1 -useb | iex
-```
-
-安装后重启终端，验证：
+### 3.1 安装 Git 并克隆项目
 
 ```bash
-fly version
+# 安装 Git
+sudo apt-get update && sudo apt-get install -y git
+
+# 克隆项目
+cd ~
+git clone https://github.com/15608339213/campus-recruitment.git
+cd campus-recruitment
 ```
 
-### 3.2 登录 Fly.io
+### 3.2 一键部署
 
 ```bash
-fly auth login
+# 赋予执行权限
+chmod +x deploy.sh
+
+# 执行部署脚本（首次约需 5-10 分钟，会自动构建 Docker 镜像）
+./deploy.sh
 ```
 
-浏览器会打开 Fly.io 登录页，用 GitHub 登录（首次需注册账号）。
-
-### 3.3 部署后端
+或者手动执行：
 
 ```bash
-cd d:\trae\秋招网站\backend
-
-# 首次初始化（会读取已有的 fly.toml 配置）
-fly launch --no-deploy
-
-# 提示选择时：
-# - Copy configuration to the new app? 选 Yes
-# - App name: campus-recruitment-backend（或自定义）
-# - Choose region: Tokyo (nrt) - 离中国最近
+docker compose up -d --build
 ```
 
-### 3.4 设置环境变量
+### 3.3 检查部署状态
 
 ```bash
-# 数据库连接（替换为你的 Supabase 连接串）
-fly secrets set DATABASE_URL="postgresql+asyncpg://postgres.xxx:密码@xxx.supabase.com:5432/postgres"
+# 查看所有容器状态
+docker compose ps
 
-# JWT 密钥（生成一个随机密钥）
-fly secrets set SECRET_KEY="请用 openssl rand -hex 32 生成一个替换这里"
+# 查看后端日志
+docker compose logs -f backend
 
-# CORS 允许的前端域名（部署前端后填入 Vercel 地址，先用通配）
-fly secrets set BACKEND_CORS_ORIGINS='["https://campus-recruitment.vercel.app","http://localhost:5173"]'
-
-# AI 配置（可选，用户也可在前端自行配置）
-fly secrets set DEEPSEEK_API_KEY="你的 DeepSeek API Key"
-```
-
-### 3.5 正式部署
-
-```bash
-fly deploy
-```
-
-部署完成后会显示后端地址：`https://campus-recruitment-backend.fly.dev`
-
-验证：
-```bash
-# 浏览器打开
-https://campus-recruitment-backend.fly.dev/api/v1/health
+# 测试健康检查
+curl http://localhost/api/v1/health
 # 应返回 {"status":"ok","app":"秋招助手后端"}
-
-# API 文档
-https://campus-recruitment-backend.fly.dev/docs
-```
-
-> **保存后端地址**，下一步前端要用。
-
----
-
-## 第四步：部署前端到 Vercel
-
-### 4.1 导入项目
-
-1. 打开 https://vercel.com，点击 **Sign Up** / **Log In**，用 GitHub 登录
-2. 点击 **Add New Project**
-3. 在 Import Git Repository 中找到 `campus-recruitment` 仓库
-4. 点击 **Import**
-
-### 4.2 配置构建
-
-在 Configure Project 页面：
-
-| 配置项 | 值 |
-|--------|-----|
-| Framework Preset | Vue.js |
-| Root Directory | `frontend` |
-| Build Command | `npm run build`（自动识别） |
-| Output Directory | `dist`（自动识别） |
-
-### 4.3 设置环境变量
-
-在 **Environment Variables** 区域添加：
-
-| 变量名 | 值 |
-|--------|-----|
-| `VITE_API_BASE_URL` | `https://campus-recruitment-backend.fly.dev/api/v1`（替换为你的后端地址） |
-
-### 4.4 部署
-
-点击 **Deploy**，等待 1-2 分钟构建完成。
-
-部署成功后获得前端地址：`https://campus-recruitment.vercel.app`
-
----
-
-## 第五步：更新后端 CORS 配置
-
-部署前端后，把 Vercel 域名加入后端 CORS 白名单：
-
-```bash
-cd d:\trae\秋招网站\backend
-
-# 替换为你的实际 Vercel 域名
-fly secrets set BACKEND_CORS_ORIGINS='["https://campus-recruitment.vercel.app","http://localhost:5173"]'
-
-# 不需要重新部署，secrets 更新后自动重启
 ```
 
 ---
 
-## 第六步：验证
+## 第四步：访问验证
 
-1. 打开前端网址 `https://你的域名.vercel.app`
-2. 注册账号并登录
-3. 浏览岗位列表（应有 300+ 条数据）
-4. 进入「AI 设置」页面，添加你的 AI API Key
-5. 测试生成简历
-6. 在手机上打开同一网址，确认可访问
+1. 浏览器打开 `http://你的服务器IP`
+2. 应看到秋招助手前端页面
+3. 注册账号并登录
+4. 浏览岗位列表（应有 300+ 条数据）
+5. API 文档：`http://你的服务器IP/api/v1/docs`
+
+管理员账号：`admin@campus.com` / `admin123`
 
 ---
 
-## 初始化数据库数据（可选）
-
-如果 Supabase 数据库是空的，需要插入种子数据：
-
-### 方法一：本地运行脚本
+## 常用运维命令
 
 ```bash
-cd d:\trae\秋招网站\backend
+# 查看服务状态
+docker compose ps
 
-# 设置临时环境变量指向 Supabase
-$env:DATABASE_URL="postgresql+asyncpg://postgres.xxx:密码@xxx.supabase.com:5432/postgres"
+# 查看实时日志
+docker compose logs -f
 
-# 运行种子数据脚本
-python ..\scripts\seed_data.py
+# 仅查看后端日志
+docker compose logs -f backend
+
+# 重启所有服务
+docker compose restart
+
+# 重启单个服务
+docker compose restart backend
+
+# 停止所有服务
+docker compose down
+
+# 停止并删除数据（慎用！会清空数据库）
+docker compose down -v
+
+# 重新构建并启动（更新代码后执行）
+git pull
+docker compose up -d --build
 ```
 
-### 方法二：Fly.io 容器内执行
+---
+
+## 更新代码
 
 ```bash
-fly ssh console
+cd ~/campus-recruitment
 
-# 进入容器后执行
-python /app/../scripts/seed_data.py
+# 拉取最新代码
+git pull origin main
+
+# 重新构建并启动
+docker compose up -d --build
+
+# 查看日志确认启动成功
+docker compose logs -f backend
+```
+
+---
+
+## 可选：绑定域名
+
+### 1. 购买域名
+
+在腾讯云购买域名（约 30-80 元/年），完成备案。
+
+### 2. 添加域名解析
+
+腾讯云控制台 → DNS 解析 DNSPod → 添加记录：
+- 主机记录：`@`
+- 记录类型：A
+- 记录值：你的服务器 IP
+
+### 3. 配置 HTTPS
+
+```bash
+# 安装 certbot
+sudo apt-get install -y certbot python3-certbot-nginx
+
+# 申请 SSL 证书
+sudo certbot --nginx -d 你的域名.com
+
+# 修改 nginx 配置启用 HTTPS
+```
+
+---
+
+## 可选：开启 pgAdmin 数据库管理
+
+```bash
+# 启动 pgAdmin
+docker compose --profile pgadmin up -d pgadmin
+
+# 访问 http://你的服务器IP:5050
+# 账号：admin@campus.com / admin123
 ```
 
 ---
 
 ## 常见问题
 
-### Q: Fly.io 部署失败，提示内存不足？
+### Q: 部署后访问不了？
 
-Fly.io 免费额度可能有限制。尝试调整 `fly.toml` 中的内存：
-```toml
-[[vm]]
-  memory = "256mb"  # 降到最小规格
-```
+1. 检查防火墙是否开放 80 端口
+2. 检查容器是否正常运行：`docker compose ps`
+3. 查看日志：`docker compose logs`
 
-### Q: 后端访问报 502/503？
+### Q: 后端启动失败？
 
-检查日志：
 ```bash
-fly logs
+# 查看后端日志
+docker compose logs backend
+
+# 常见原因：
+# 1. 数据库未就绪 → 等待 30 秒后重试
+# 2. 内存不足 → 2G 服务器可能需要添加 swap
 ```
-通常是数据库连接失败，确认 `DATABASE_URL` 格式正确（`postgresql+asyncpg://`）。
 
-### Q: 前端访问报 CORS 错误？
+### Q: 内存不足（OOM）？
 
-确认后端环境变量 `BACKEND_CORS_ORIGINS` 包含了你的 Vercel 域名。
+2G 内存服务器如果构建时 OOM，添加 swap：
 
-### Q: Fly.io 免费额度用完？
+```bash
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+# 永久生效
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
 
-Fly.io 免费额度为 3 个 shared-cpu-1x 256MB 实例。如果超限：
-- 改用 Render 免费版（会休眠，但可接受）
-- 或购买付费计划（$1.95/月起）
+### Q: 如何备份数据库？
 
-### Q: 如何绑定自定义域名？
+```bash
+# 备份
+docker exec campus-postgres pg_dump -U campus campus_recruitment > backup_$(date +%Y%m%d).sql
 
-- Vercel：Project Settings → Domains → 添加域名
-- Fly.io：`fly certs add your-domain.com`
+# 恢复
+docker exec -i campus-postgres psql -U campus campus_recruitment < backup_20260806.sql
+```
 
 ---
 
-## 后续更新
+## 费用总结
 
-代码推送到 GitHub 后：
-- **Vercel** 会自动重新构建部署前端
-- **Fly.io** 需手动执行 `fly deploy` 更新后端
+| 项目 | 费用 |
+|------|------|
+| 腾讯云轻量服务器 2核2G | 约 99-150 元/年（学生价） |
+| 域名（可选） | 约 30-80 元/年 |
+| HTTPS 证书 | 免费（Let's Encrypt） |
+| 总计 | 约 100-230 元/年 |
 
 ---
 
-## 各平台管理入口
+## 简历加分项
 
-| 平台 | 管理地址 | 用途 |
-|------|---------|------|
-| GitHub | https://github.com/your-username/campus-recruitment | 代码仓库 |
-| Supabase | https://supabase.com/dashboard | 数据库管理 |
-| Fly.io | https://fly.io/dashboard | 后端服务 |
-| Vercel | https://vercel.com/dashboard | 前端部署 |
+部署完成后，你可以在简历中写：
+
+- 基于 **Docker Compose** 编排全栈应用（FastAPI + Vue3 + PostgreSQL + Redis + Nginx）
+- 部署于**腾讯云轻量服务器**，实现 7×24 小时稳定运行
+- 使用 **Nginx 反向代理** 实现前后端统一入口，配置 HTTPS 加密传输
+- 采用 **Docker 容器化** 部署，支持一键构建、快速扩容
+- 应用 **PostgreSQL** 关系型数据库，设计用户/岗位/简历等多表关联模型
