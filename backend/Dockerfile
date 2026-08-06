@@ -1,6 +1,6 @@
 # ============================================================
 # 秋招助手后端 Dockerfile
-# 适用于 Fly.io / Render / 任意支持 Docker 的云平台
+# 适用于 Railway / Fly.io / Render / 任意支持 Docker 的云平台
 # ============================================================
 
 # ===== 构建阶段 =====
@@ -55,5 +55,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
 
-# 启动命令，支持通过 PORT 环境变量覆盖端口
-CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2
+# 启动命令：先初始化数据库 + 种子数据，再启动服务
+# 支持通过 PORT 环境变量覆盖端口
+CMD python init_and_seed.py && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2

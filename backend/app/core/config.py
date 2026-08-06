@@ -69,6 +69,14 @@ class Settings(BaseSettings):
     # ===== Redis =====
     REDIS_URL: str = ""
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _ensure_async_postgres(cls, v: Any) -> Any:
+        """自动将 postgresql:// 转为 postgresql+asyncpg:// 供 SQLAlchemy 异步引擎使用。"""
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _assemble_cors_origins(cls, v: Any) -> list[str]:
