@@ -362,8 +362,7 @@ campus-recruitment/
 ├── docs/                         # 项目文档
 ├── .github/workflows/            # CI/CD 配置
 │   ├── ci.yml                    # CI 测试
-│   ├── crawler.yml               # 定时爬虫
-│   └── deploy-frontend.yml       # 前端部署
+│   └── crawler.yml               # 定时爬虫
 ├── docker-compose.yml            # 全栈服务编排
 ├── .env.example                  # 环境变量示例
 └── README.md
@@ -468,7 +467,7 @@ docker compose logs -f frontend
 #### 前端部署
 
 1. 构建前端：`cd frontend && npm run build`
-2. 将 `dist/` 部署到任意静态文件服务器（Nginx、Vercel、Netlify 等）
+2. 将 `dist/` 部署到任意静态文件服务器（Nginx 等）
 3. 配置环境变量 `VITE_API_BASE_URL` 指向后端 API 地址
 
 #### 后端部署
