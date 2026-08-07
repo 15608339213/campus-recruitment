@@ -189,6 +189,99 @@ async def list_resumes(
     return ResumeListResponse(items=items, total=len(items))
 
 
+# ===== 简历模板 =====
+
+@router.get("/templates", response_model=ResumeTemplateListResponse)
+async def list_templates(db: DBSession) -> ResumeTemplateListResponse:
+    """获取所有可用简历模板。"""
+    result = await db.execute(
+        select(ResumeTemplate)
+        .where(ResumeTemplate.is_public == True)
+        .order_by(ResumeTemplate.is_builtin.desc(), ResumeTemplate.downloads.desc())
+    )
+    templates = result.scalars().all()
+    return ResumeTemplateListResponse(
+        items=[ResumeTemplateResponse.model_validate(t) for t in templates],
+        total=len(templates),
+    )
+
+
+@router.get("/templates/{template_id}", response_model=ResumeTemplateResponse)
+async def get_template(template_id: int, db: DBSession) -> ResumeTemplateResponse:
+    """获取单个模板详情。"""
+    result = await db.execute(
+        select(ResumeTemplate).where(ResumeTemplate.id == template_id)
+    )
+    tpl = result.scalar_one_or_none()
+    if tpl is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="模板不存在")
+    return ResumeTemplateResponse.model_validate(tpl)
+
+
+# ===== 简历分析 =====
+
+@router.post("/analyze", response_model=ResumeAnalysisResponse)
+async def analyze_resume(
+    payload: ResumeAnalysisRequest,
+    current_user: CurrentUser,
+    db: DBSession,
+) -> ResumeAnalysisResponse:
+    """上传简历文本，AI 分析并给出优化建议。"""
+    try:
+        client = await get_active_provider_client(current_user.id, db)
+    except AIProviderError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    system_prompt = (
+        "你是一位资深 HR 和简历优化专家。请分析用户上传的简历文本，"
+        "从以下维度给出评估和建议。必须返回合法 JSON。\n"
+        '{"ats_score": 85, "skills_matched": ["技能1","技能2"], '
+        '"missing_keywords": ["缺失关键词1"], '
+        '"suggestions": [{"title": "问题", "detail": "建议"}]}'
+    )
+
+    user_msg = f"## 简历内容\n{payload.resume_text}"
+    if payload.target_job_category:
+        user_msg += f"\n\n## 目标岗位类别\n{payload.target_job_category}"
+
+    try:
+        result = await client.chat_json(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_msg},
+            ],
+            temperature=0.3,
+            max_tokens=2048,
+        )
+        await client.close()
+    except AIProviderError as e:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
+
+    import json as _json
+
+    analysis = ResumeAnalysis(
+        user_id=current_user.id,
+        original_text=payload.resume_text[:5000],
+        ats_score=result.get("ats_score"),
+        skills_matched=_json.dumps(result.get("skills_matched", []), ensure_ascii=False),
+        missing_keywords=_json.dumps(result.get("missing_keywords", []), ensure_ascii=False),
+        suggestions=_json.dumps(result.get("suggestions", []), ensure_ascii=False),
+        raw_ai_response=_json.dumps(result, ensure_ascii=False),
+    )
+    db.add(analysis)
+    await db.commit()
+    await db.refresh(analysis)
+
+    return ResumeAnalysisResponse(
+        id=analysis.id,
+        ats_score=analysis.ats_score,
+        skills_matched=_json.loads(analysis.skills_matched) if analysis.skills_matched else None,
+        missing_keywords=_json.loads(analysis.missing_keywords) if analysis.missing_keywords else None,
+        suggestions=_json.loads(analysis.suggestions) if analysis.suggestions else None,
+        created_at=analysis.created_at,
+    )
+
+
 # ===== 简历详情 =====
 @router.get("/{resume_id}", response_model=ResumeResponse)
 async def get_resume(
@@ -301,96 +394,3 @@ h2 {{ color: #34495e; border-left: 4px solid #3498db; padding-left: 10px; }}
 </style></head>
 <body>{body}</body>
 </html>"""
-
-
-# ===== 简历模板 =====
-
-@router.get("/templates", response_model=ResumeTemplateListResponse)
-async def list_templates(db: DBSession) -> ResumeTemplateListResponse:
-    """获取所有可用简历模板。"""
-    result = await db.execute(
-        select(ResumeTemplate)
-        .where(ResumeTemplate.is_public == True)
-        .order_by(ResumeTemplate.is_builtin.desc(), ResumeTemplate.downloads.desc())
-    )
-    templates = result.scalars().all()
-    return ResumeTemplateListResponse(
-        items=[ResumeTemplateResponse.model_validate(t) for t in templates],
-        total=len(templates),
-    )
-
-
-@router.get("/templates/{template_id}", response_model=ResumeTemplateResponse)
-async def get_template(template_id: int, db: DBSession) -> ResumeTemplateResponse:
-    """获取单个模板详情。"""
-    result = await db.execute(
-        select(ResumeTemplate).where(ResumeTemplate.id == template_id)
-    )
-    tpl = result.scalar_one_or_none()
-    if tpl is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="模板不存在")
-    return ResumeTemplateResponse.model_validate(tpl)
-
-
-# ===== 简历分析 =====
-
-@router.post("/analyze", response_model=ResumeAnalysisResponse)
-async def analyze_resume(
-    payload: ResumeAnalysisRequest,
-    current_user: CurrentUser,
-    db: DBSession,
-) -> ResumeAnalysisResponse:
-    """上传简历文本，AI 分析并给出优化建议。"""
-    try:
-        client = await get_active_provider_client(current_user.id, db)
-    except AIProviderError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    system_prompt = (
-        "你是一位资深 HR 和简历优化专家。请分析用户上传的简历文本，"
-        "从以下维度给出评估和建议。必须返回合法 JSON。\n"
-        '{"ats_score": 85, "skills_matched": ["技能1","技能2"], '
-        '"missing_keywords": ["缺失关键词1"], '
-        '"suggestions": [{"title": "问题", "detail": "建议"}]}'
-    )
-
-    user_msg = f"## 简历内容\n{payload.resume_text}"
-    if payload.target_job_category:
-        user_msg += f"\n\n## 目标岗位类别\n{payload.target_job_category}"
-
-    try:
-        result = await client.chat_json(
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_msg},
-            ],
-            temperature=0.3,
-            max_tokens=2048,
-        )
-        await client.close()
-    except AIProviderError as e:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(e))
-
-    import json as _json
-
-    analysis = ResumeAnalysis(
-        user_id=current_user.id,
-        original_text=payload.resume_text[:5000],
-        ats_score=result.get("ats_score"),
-        skills_matched=_json.dumps(result.get("skills_matched", []), ensure_ascii=False),
-        missing_keywords=_json.dumps(result.get("missing_keywords", []), ensure_ascii=False),
-        suggestions=_json.dumps(result.get("suggestions", []), ensure_ascii=False),
-        raw_ai_response=_json.dumps(result, ensure_ascii=False),
-    )
-    db.add(analysis)
-    await db.commit()
-    await db.refresh(analysis)
-
-    return ResumeAnalysisResponse(
-        id=analysis.id,
-        ats_score=analysis.ats_score,
-        skills_matched=_json.loads(analysis.skills_matched) if analysis.skills_matched else None,
-        missing_keywords=_json.loads(analysis.missing_keywords) if analysis.missing_keywords else None,
-        suggestions=_json.loads(analysis.suggestions) if analysis.suggestions else None,
-        created_at=analysis.created_at,
-    )
