@@ -396,7 +396,19 @@ function getProviderName(providerId: string): string {
           :key="provider.id"
           class="builtin-item"
         >
-          <div class="builtin-name">{{ provider.name }}</div>
+          <div class="builtin-name">
+            {{ provider.name }}
+            <n-tag
+              v-for="tag in provider.tags"
+              :key="tag"
+              size="tiny"
+              type="warning"
+              round
+              :bordered="false"
+            >
+              {{ tag }}
+            </n-tag>
+          </div>
           <div class="builtin-desc">{{ provider.description }}</div>
           <div class="builtin-models">
             <n-tag
@@ -694,6 +706,10 @@ function getProviderName(providerId: string): string {
   font-weight: 600;
   color: #1f2937;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
 }
 
 .builtin-desc {

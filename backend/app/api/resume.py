@@ -3,18 +3,23 @@ from typing import Optional, List, Dict, Any
 """简历相关 API 路由。
 
 接口：
-- POST   /resume/generate   生成定制简历（调用 DeepSeek）
+- POST   /resume/upload       上传简历文件（PDF/Word）
+- POST   /resume/parse-and-fill  解析简历并返回结构化数据
+- POST   /resume/import-profile  将解析结果导入用户资料
+- POST   /resume/generate   生成定制简历（调用 AI）
 - GET    /resume            获取当前用户的简历列表
 - GET    /resume/{id}       获取简历详情
 - GET    /resume/{id}/pdf   下载简历 PDF
 """
 
 import json
+import os
+from typing import Optional
 from typing_extensions import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import CurrentUser, DBSession
@@ -31,9 +36,19 @@ from app.schemas.resume import (
     ResumeResponse,
     ResumeTemplateListResponse,
     ResumeTemplateResponse,
+    ResumeUploadResponse,
+    ResumeParseResponse,
+    ProfileImportRequest,
+    ProfileImportResponse,
 )
 from app.api.ai_provider import get_active_provider_client
-from app.services.ai.provider import AIProviderError
+from app.services.ai.provider import AIProviderError, AIProviderClient
+from app.utils.file_handler import (
+    validate_file,
+    save_upload_file,
+    extract_text,
+    get_file_url,
+)
 
 router = APIRouter(prefix="/resume", tags=["简历"])
 
@@ -93,7 +108,156 @@ def _safe_json_parse(value: Optional[str]):
         return value
 
 
-# ===== 生成简历 =====
+# ===== 上传简历文件 =====
+@router.post("/upload", response_model=ResumeUploadResponse)
+async def upload_resume(
+    file: UploadFile = File(...),
+    current_user: CurrentUser = Depends(),
+    db: DBSession = Depends(),
+) -> ResumeUploadResponse:
+    """上传简历文件（PDF/Word），提取文本并保存记录。"""
+    # 1. 校验文件
+    safe_name, file_type, sub_dir = await validate_file(file)
+
+    # 2. 保存文件
+    file_path = await save_upload_file(file, sub_dir, safe_name)
+
+    # 3. 提取文本
+    extracted_text = ""
+    if file_type in ("pdf", "word"):
+        extracted_text = await extract_text(file_path, file_type)
+
+    # 4. 写入 resume_uploads 表
+    from app.models.resume import ResumeUpload
+
+    upload = ResumeUpload(
+        user_id=current_user.id,
+        file_name=file.filename or safe_name,
+        file_path=file_path,
+        file_type=file_type,
+        file_size=os.path.getsize(file_path),
+        extracted_text=extracted_text[:50000],  # 限制50KB
+    )
+    db.add(upload)
+    await db.commit()
+    await db.refresh(upload)
+
+    return ResumeUploadResponse(
+        id=upload.id,
+        file_name=upload.file_name,
+        file_type=upload.file_type,
+        file_size=upload.file_size,
+        extracted_text=extracted_text[:500],
+    )
+
+
+# ===== 解析简历并返回结构化数据 =====
+@router.post("/parse-and-fill", response_model=ResumeParseResponse)
+async def parse_resume_and_fill(
+    uploaded_text: Optional[str] = Form(None),
+    upload_id: Optional[int] = Form(None),
+    current_user: CurrentUser = Depends(),
+    db: DBSession = Depends(),
+) -> ResumeParseResponse:
+    """使用 AI 解析简历文本，返回结构化字段供前端自动填充。"""
+    # 获取文本
+    text = uploaded_text
+    if not text and upload_id:
+        from app.models.resume import ResumeUpload
+
+        result = await db.execute(
+            select(ResumeUpload).where(
+                ResumeUpload.id == upload_id,
+                ResumeUpload.user_id == current_user.id,
+            )
+        )
+        upload_record = result.scalar_one_or_none()
+        if upload_record:
+            text = upload_record.extracted_text
+
+    if not text:
+        raise HTTPException(status_code=400, detail="请提供简历文本或上传文件ID")
+
+    # 调用 AI 解析
+    try:
+        client = await get_active_provider_client(current_user.id, db)
+        parsed = await client.parse_resume(text[:8000])
+        await client.close()
+    except AIProviderError as e:
+        raise HTTPException(status_code=503, detail=f"AI 解析失败：{e}")
+
+    # 保存解析结果
+    if upload_id:
+        from app.models.resume import ResumeUpload
+
+        await db.execute(
+            update(ResumeUpload)
+            .where(ResumeUpload.id == upload_id)
+            .values(parsed_data=json.dumps(parsed, ensure_ascii=False))
+        )
+        await db.commit()
+
+    return ResumeParseResponse(
+        name=parsed.get("name", ""),
+        phone=parsed.get("phone", ""),
+        email=parsed.get("email", ""),
+        city=parsed.get("city", ""),
+        school=parsed.get("school", ""),
+        major=parsed.get("major", ""),
+        degree=parsed.get("degree", ""),
+        graduation_year=str(parsed.get("graduation_year", "")),
+        skills=parsed.get("skills", []),
+        experience=parsed.get("experience", []),
+        projects=parsed.get("projects", []),
+        languages=parsed.get("languages", []),
+        certificates=parsed.get("certificates", []),
+    )
+
+
+# ===== 导入解析结果到用户资料 =====
+@router.post("/import-profile", response_model=ProfileImportResponse)
+async def import_parsed_profile(
+    payload: ProfileImportRequest,
+    current_user: CurrentUser = Depends(),
+    db: DBSession = Depends(),
+) -> ProfileImportResponse:
+    """将确认后的简历解析结果写入 user_profiles 表。"""
+    profile = current_user.profile
+
+    if profile is None:
+        from app.models.user import UserProfile
+        profile = UserProfile(user_id=current_user.id)
+        db.add(profile)
+
+    # 更新字段（仅更新非空值）
+    if payload.school:
+        profile.school = payload.school
+    if payload.major:
+        profile.major = payload.major
+    if payload.degree:
+        profile.degree = payload.degree
+    if payload.graduation_year:
+        profile.graduation_year = payload.graduation_year
+    if payload.phone:
+        profile.phone = payload.phone
+    if payload.skills is not None:
+        profile.skills = payload.skills
+    if payload.experience_json is not None:
+        profile.experience_json = json.dumps(payload.experience_json, ensure_ascii=False)
+    if payload.projects_json is not None:
+        profile.projects_json = json.dumps(payload.projects_json, ensure_ascii=False)
+
+    await db.commit()
+    await db.refresh(profile)
+
+    return ProfileImportResponse(
+        success=True,
+        message="个人资料已更新",
+        updated_fields=list(payload.model_dump(exclude_none=True).keys()),
+    )
+
+
+# ===== 生成简历 ====="
 @router.post("/generate", response_model=ResumeResponse, status_code=status.HTTP_201_CREATED)
 async def generate_resume(
     payload: ResumeGenerate,
@@ -192,13 +356,19 @@ async def list_resumes(
 # ===== 简历模板 =====
 
 @router.get("/templates", response_model=ResumeTemplateListResponse)
-async def list_templates(db: DBSession) -> ResumeTemplateListResponse:
-    """获取所有可用简历模板。"""
-    result = await db.execute(
-        select(ResumeTemplate)
-        .where(ResumeTemplate.is_public == True)
-        .order_by(ResumeTemplate.is_builtin.desc(), ResumeTemplate.downloads.desc())
-    )
+async def list_templates(
+    db: DBSession,
+    category: Optional[str] = None,
+    style: Optional[str] = None,
+) -> ResumeTemplateListResponse:
+    """获取所有可用简历模板。支持按分类(category)和风格(style)筛选。"""
+    stmt = select(ResumeTemplate).where(ResumeTemplate.is_public == True)
+    if category:
+        stmt = stmt.where(ResumeTemplate.category == category)
+    if style:
+        stmt = stmt.where(ResumeTemplate.style_tags.contains(style))
+    stmt = stmt.order_by(ResumeTemplate.is_builtin.desc(), ResumeTemplate.downloads.desc())
+    result = await db.execute(stmt)
     templates = result.scalars().all()
     return ResumeTemplateListResponse(
         items=[ResumeTemplateResponse.model_validate(t) for t in templates],

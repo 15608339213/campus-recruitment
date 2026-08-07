@@ -9,6 +9,8 @@ export interface BuiltinProvider {
   default_model: string
   website: string
   description: string
+  api_style: string
+  tags: string[]
 }
 
 export interface AIProviderConfig {

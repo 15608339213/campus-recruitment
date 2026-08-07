@@ -45,6 +45,12 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'AI简历生成', requiresAuth: true },
   },
   {
+    path: '/resume/templates',
+    name: 'resumeTemplates',
+    component: () => import('@/views/resume/TemplateGallery.vue'),
+    meta: { title: '简历模板库' },
+  },
+  {
     path: '/settings/ai',
     name: 'aiSettings',
     component: () => import('@/views/settings/AISettings.vue'),
@@ -73,6 +79,12 @@ const routes: RouteRecordRaw[] = [
     name: 'favorites',
     component: () => import('@/views/profile/Favorites.vue'),
     meta: { title: '我的收藏', requiresAuth: true },
+  },
+  {
+    path: '/admin/interview/questions',
+    name: 'adminQuestions',
+    component: () => import('@/views/admin/QuestionManager.vue'),
+    meta: { title: '题库管理', requiresAuth: true, requiresAdmin: true },
   },
   {
     path: '/feedback',
@@ -104,9 +116,16 @@ router.beforeEach((to, _from, next) => {
   // 需要登录的页面
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
     next({ name: 'login', query: { redirect: to.fullPath } })
-  } else {
-    next()
+    return
   }
+
+  // 需要管理员权限的页面
+  if (to.meta.requiresAdmin && authStore.userRole !== 'admin') {
+    next({ name: 'home' })
+    return
+  }
+
+  next()
 })
 
 export default router

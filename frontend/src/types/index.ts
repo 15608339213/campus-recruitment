@@ -65,6 +65,13 @@ export interface Job {
   description_html: string
   source_url: string
   source_repo?: string
+  apply_url?: string
+  apply_email?: string
+  poster_url?: string
+  source_verified?: boolean
+  source_platform?: string
+  view_count?: number
+  apply_count?: number
   tags: string[]
   is_active: boolean
   created_at: string
@@ -191,6 +198,24 @@ export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
+}
+
+// 简历模板
+export interface ResumeTemplate {
+  id: number
+  name: string
+  category: string
+  description: string | null
+  html_structure: string
+  css_rules: string
+  style_tags: string | null
+  supported_sections: string | null
+  color_themes: string | null
+  preview_url: string | null
+  is_builtin: boolean
+  is_public: boolean
+  downloads: number
+  created_at: string
 }
 
 // 登录/注册响应

@@ -11,10 +11,7 @@ import {
   NIcon,
   NSpin,
   NEmpty,
-  NDescriptions,
-  NDescriptionsItem,
-  NDivider,
-  NAlert,
+  NImage,
   useMessage,
 } from 'naive-ui'
 import {
@@ -29,6 +26,12 @@ import {
   LinkOutline,
   TimeOutline,
   AlertCircleOutline,
+  SendOutline,
+  CopyOutline,
+  CheckmarkCircleOutline,
+  EyeOutline,
+  PeopleOutline,
+  ImageOutline,
 } from '@vicons/ionicons5'
 import type { Job } from '@/types'
 import {
@@ -78,6 +81,29 @@ async function handleFavorite() {
 function goToSource() {
   if (job.value?.source_url) {
     window.open(job.value.source_url, '_blank')
+  }
+}
+
+function handleApply() {
+  if (!job.value) return
+  if (job.value.apply_url) {
+    window.open(job.value.apply_url, '_blank')
+  } else if (job.value.apply_email) {
+    copyEmail()
+  } else if (job.value.source_url) {
+    window.open(job.value.source_url, '_blank')
+  } else {
+    message.warning('暂无投递链接，请查看原始来源')
+  }
+}
+
+async function copyEmail() {
+  if (!job.value?.apply_email) return
+  try {
+    await navigator.clipboard.writeText(job.value.apply_email)
+    message.success('投递邮箱已复制到剪贴板：' + job.value.apply_email)
+  } catch {
+    message.info('投递邮箱：' + job.value.apply_email)
   }
 }
 
@@ -140,6 +166,27 @@ function goToResume() {
               >
                 {{ formatJobType(job.job_type) }}
               </n-tag>
+              <n-tag
+                v-if="job.source_platform"
+                type="default"
+                size="small"
+                round
+                :bordered="false"
+              >
+                来源：{{ job.source_platform }}
+              </n-tag>
+              <n-tag
+                v-if="job.source_verified"
+                type="success"
+                size="small"
+                round
+                :bordered="false"
+              >
+                <template #icon>
+                  <n-icon size="12"><CheckmarkCircleOutline /></n-icon>
+                </template>
+                已核验
+              </n-tag>
             </div>
 
             <div class="job-info-grid">
@@ -192,6 +239,17 @@ function goToResume() {
               </div>
             </div>
 
+            <div class="job-stats" v-if="job.view_count !== undefined || job.apply_count !== undefined">
+              <span class="stat-item">
+                <n-icon size="14" color="#6b7280"><EyeOutline /></n-icon>
+                {{ job.view_count ?? 0 }} 次浏览
+              </span>
+              <span class="stat-item">
+                <n-icon size="14" color="#6b7280"><PeopleOutline /></n-icon>
+                {{ job.apply_count ?? 0 }} 人已投递
+              </span>
+            </div>
+
             <div class="job-tags" v-if="job.tags && job.tags.length">
               <n-tag
                 v-for="tag in job.tags"
@@ -220,6 +278,15 @@ function goToResume() {
             <n-button
               type="primary"
               size="large"
+              @click="handleApply"
+            >
+              <template #icon>
+                <n-icon><SendOutline /></n-icon>
+              </template>
+              {{ job.apply_email && !job.apply_url ? '复制投递邮箱' : '立即投递' }}
+            </n-button>
+            <n-button
+              size="large"
               @click="goToResume"
             >
               生成定制简历
@@ -238,6 +305,25 @@ function goToResume() {
           点击查看原始链接
         </n-button>
       </n-alert>
+
+      <!-- 海报展示 -->
+      <n-card v-if="job.poster_url" :bordered="false" class="poster-card">
+        <template #header>
+          <div class="poster-header">
+            <n-icon size="18" color="#8b5cf6"><ImageOutline /></n-icon>
+            <span>岗位海报</span>
+          </div>
+        </template>
+        <div class="poster-wrapper">
+          <n-image
+            :src="job.poster_url"
+            alt="岗位海报"
+            width="100%"
+            object-fit="contain"
+            lazy
+          />
+        </div>
+      </n-card>
 
       <!-- 岗位描述 -->
       <n-card title="岗位描述" :bordered="false" class="detail-section">
@@ -342,6 +428,20 @@ function goToResume() {
   gap: 6px;
 }
 
+.job-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
 .header-actions {
   display: flex;
   flex-direction: column;
@@ -352,6 +452,28 @@ function goToResume() {
 .source-alert {
   border-radius: 8px;
   margin-bottom: 16px;
+}
+
+.poster-card {
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.poster-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.poster-wrapper {
+  max-height: 500px;
+  overflow: hidden;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
 }
 
 .detail-section {

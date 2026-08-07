@@ -43,3 +43,12 @@ psutil==7.0.0
 # ===== 测试 =====
 pytest==8.3.4
 pytest-asyncio==0.25.0
+
+# ===== 文件处理（v2.1 新增）=====
+pdfplumber==0.11.4
+python-docx==1.1.2
+python-magic==0.4.27
+python-magic-bin==0.4.14  # Windows 专用
+
+# ===== PDF 生成 =====
+weasyprint==63.1

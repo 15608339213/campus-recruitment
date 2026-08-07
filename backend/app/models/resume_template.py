@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -23,6 +24,9 @@ class ResumeTemplate(Base):
     description: Mapped[str] = mapped_column(String(500), nullable=True, comment="模板描述")
     html_structure: Mapped[str] = mapped_column(Text, nullable=False, comment="HTML 结构")
     css_rules: Mapped[str] = mapped_column(Text, nullable=False, comment="CSS 样式")
+    supported_sections: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="支持的简历板块 JSON")
+    color_themes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="配色方案 JSON")
+    style_tags: Mapped[Optional[str]] = mapped_column(Text, nullable=True, comment="风格标签 JSON")
     preview_url: Mapped[str] = mapped_column(String(500), nullable=True, comment="预览图 URL")
     is_builtin: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否内置模板")
     is_public: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否公开")

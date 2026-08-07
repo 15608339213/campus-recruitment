@@ -34,6 +34,14 @@ class JobBase(BaseModel):
     description_html: Optional[str] = None
     source_url: Optional[str] = None
     source_repo: Optional[str] = None
+    apply_url: Optional[str] = None
+    apply_email: Optional[str] = None
+    poster_url: Optional[str] = None
+    source_verified: Optional[bool] = None
+    verified_at: Optional[datetime] = None
+    source_platform: Optional[str] = None
+    view_count: Optional[int] = None
+    apply_count: Optional[int] = None
 
 
 class JobCreate(JobBase):

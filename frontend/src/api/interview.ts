@@ -20,8 +20,19 @@ export interface Question {
   answer?: string
   question_type?: string
   difficulty?: string
+  company?: string
   source?: string
   updated_at: string
+}
+
+export interface QuestionCreate {
+  job_category: string
+  question: string
+  answer?: string
+  question_type?: string
+  difficulty?: string
+  company?: string
+  source?: string
 }
 
 export interface QuestionListResponse {
@@ -76,4 +87,27 @@ export function getQuestionDetail(id: number) {
 // 获取所有有数据的岗位类别
 export function getCategories() {
   return http.get<CategoryInfo>('/interview/categories')
+}
+
+// 创建题目
+export function createQuestion(data: QuestionCreate) {
+  return http.post<Question>('/interview/questions', data)
+}
+
+// 更新题目
+export function updateQuestion(id: number, data: Partial<QuestionCreate>) {
+  return http.put<Question>(`/interview/questions/${id}`, data)
+}
+
+// 删除题目
+export function deleteQuestion(id: number) {
+  return http.delete(`/interview/questions/${id}`)
+}
+
+// 批量导入题目
+export function batchImportQuestions(questions: QuestionCreate[]) {
+  return http.post<{ success_count: number; failed_count: number; errors?: string[] }>(
+    '/interview/questions/batch',
+    questions
+  )
 }

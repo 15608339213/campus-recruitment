@@ -56,6 +56,8 @@ class AIProviderInfo(BaseModel):
     default_model: str
     website: str
     description: str
+    api_style: str = Field("openai", description="API 风格：openai/anthropic/gemini")
+    tags: List[str] = Field(default_factory=list, description="模型标签")
 
 
 class AIProviderListResponse(BaseModel):

@@ -22,9 +22,11 @@ from app.schemas.interview import (
     InterviewTipCreate,
     InterviewTipListResponse,
     InterviewTipResponse,
+    QuestionBankBatchCreate,
     QuestionBankCreate,
     QuestionBankListResponse,
     QuestionBankResponse,
+    QuestionBankUpdate,
 )
 
 router = APIRouter(prefix="/interview", tags=["面试技巧与题库"])
@@ -206,3 +208,81 @@ async def create_question(
     await db.commit()
     await db.refresh(question)
     return QuestionBankResponse.model_validate(question)
+
+
+# ===== 编辑题目（管理员） =====
+@router.put("/questions/{question_id}", response_model=QuestionBankResponse)
+async def update_question(
+    question_id: int,
+    payload: QuestionBankUpdate,
+    admin: AdminUser,
+    db: DBSession,
+) -> QuestionBankResponse:
+    """编辑题目（仅管理员）。"""
+    result = await db.execute(
+        select(QuestionBank).where(QuestionBank.id == question_id)
+    )
+    question = result.scalar_one_or_none()
+    if question is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="题目不存在",
+        )
+
+    # 仅更新非 None 的字段
+    update_data = payload.model_dump(exclude_unset=True, exclude_none=True)
+    for field, value in update_data.items():
+        setattr(question, field, value)
+
+    await db.commit()
+    await db.refresh(question)
+    return QuestionBankResponse.model_validate(question)
+
+
+# ===== 删除题目（管理员） =====
+@router.delete("/questions/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_question(
+    question_id: int,
+    admin: AdminUser,
+    db: DBSession,
+) -> None:
+    """删除题目（仅管理员）。"""
+    result = await db.execute(
+        select(QuestionBank).where(QuestionBank.id == question_id)
+    )
+    question = result.scalar_one_or_none()
+    if question is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="题目不存在",
+        )
+
+    await db.delete(question)
+    await db.commit()
+
+
+# ===== 批量导入题目（管理员） =====
+@router.post("/questions/batch", response_model=List[QuestionBankResponse], status_code=status.HTTP_201_CREATED)
+async def batch_create_questions(
+    payload: QuestionBankBatchCreate,
+    admin: AdminUser,
+    db: DBSession,
+) -> List[QuestionBankResponse]:
+    """批量导入题目（仅管理员）。"""
+    created: List[QuestionBankResponse] = []
+    for item in payload.items:
+        question = QuestionBank(
+            job_category=item.job_category,
+            question=item.question,
+            answer=item.answer,
+            question_type=item.question_type,
+            difficulty=item.difficulty,
+            source=item.source,
+        )
+        db.add(question)
+        await db.flush()
+        await db.refresh(question)
+        created.append(QuestionBankResponse.model_validate(question))
+
+    await db.commit()
+    return created

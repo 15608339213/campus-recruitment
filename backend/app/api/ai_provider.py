@@ -69,6 +69,8 @@ async def list_builtin_providers() -> List[AIProviderInfo]:
             default_model=info["default_model"],
             website=info["website"],
             description=info["description"],
+            api_style=info.get("api_style", "openai"),
+            tags=info.get("tags", []),
         )
         for pid, info in BUILTIN_PROVIDERS.items()
     ]
@@ -226,11 +228,15 @@ async def get_active_provider_client(
     config = result.scalar_one_or_none()
 
     if config:
+        # 获取 api_style
+        builtin_info = BUILTIN_PROVIDERS.get(config.provider_id, {})
+        api_style = builtin_info.get("api_style", "openai")
         return AIProviderClient(
             api_key=config.api_key,
             base_url=config.base_url,
             model=config.model,
             provider_id=config.provider_id,
+            api_style=api_style,
         )
 
     # 回退到系统默认 DeepSeek 配置
@@ -242,6 +248,7 @@ async def get_active_provider_client(
             base_url=settings.DEEPSEEK_BASE_URL,
             model=settings.DEEPSEEK_MODEL,
             provider_id="deepseek",
+            api_style="openai",
         )
 
     raise AIProviderError(

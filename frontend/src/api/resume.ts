@@ -1,5 +1,5 @@
 import { http } from './request'
-import type { Resume, ResumeGenerateRequest, ResumeContent } from '@/types'
+import type { Resume, ResumeGenerateRequest, ResumeContent, ResumeTemplate } from '@/types'
 
 // AI 生成简历
 export function generateResume(data: ResumeGenerateRequest) {
@@ -23,22 +23,14 @@ export function downloadResumePdf(id: number) {
 
 // ===== 简历模板 =====
 
-export interface ResumeTemplate {
-  id: number
-  name: string
-  category: string
-  description: string | null
-  html_structure: string
-  css_rules: string
-  preview_url: string | null
-  is_builtin: boolean
-  is_public: boolean
-  downloads: number
+// 获取模板列表
+export function getTemplates(params?: { category?: string; style?: string }) {
+  return http.get<{ items: ResumeTemplate[]; total: number }>('/resume/templates', { params })
 }
 
-// 获取模板列表
-export function getTemplates() {
-  return http.get<{ items: ResumeTemplate[]; total: number }>('/resume/templates')
+// 获取单个模板详情
+export function getTemplateById(id: number) {
+  return http.get<ResumeTemplate>(`/resume/templates/${id}`)
 }
 
 // ===== 简历分析 =====

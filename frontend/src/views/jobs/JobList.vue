@@ -28,6 +28,8 @@ import {
   BriefcaseOutline,
   RefreshOutline,
   TimeOutline,
+  CheckmarkCircleOutline,
+  CloudOutline,
 } from '@vicons/ionicons5'
 import type { Job } from '@/types'
 import {
@@ -375,11 +377,35 @@ watch(
                   <n-tag :type="getJobTypeColor(job.job_type)" size="small" round>
                     {{ formatJobType(job.job_type) }}
                   </n-tag>
+                  <n-tag
+                    v-if="job.source_verified"
+                    type="success"
+                    size="tiny"
+                    round
+                    :bordered="false"
+                  >
+                    <template #icon>
+                      <n-icon size="11"><CheckmarkCircleOutline /></n-icon>
+                    </template>
+                    已核验
+                  </n-tag>
                 </div>
                 <div class="job-company">
                   <span class="company-name">{{ job.company }}</span>
                   <n-tag :type="getCompanyTypeColor(job.company_type)" size="tiny" round :bordered="false">
                     {{ formatCompanyType(job.company_type) }}
+                  </n-tag>
+                  <n-tag
+                    v-if="job.source_platform"
+                    type="default"
+                    size="tiny"
+                    round
+                    :bordered="false"
+                  >
+                    <template #icon>
+                      <n-icon size="11"><CloudOutline /></n-icon>
+                    </template>
+                    {{ job.source_platform }}
                   </n-tag>
                 </div>
                 <div class="job-meta">

@@ -63,6 +63,9 @@ class ResumeTemplateResponse(BaseModel):
     description: Optional[str] = None
     html_structure: str
     css_rules: str
+    style_tags: Optional[str] = None
+    supported_sections: Optional[str] = None
+    color_themes: Optional[str] = None
     preview_url: Optional[str] = None
     is_builtin: bool
     is_public: bool
@@ -101,3 +104,54 @@ class ResumeAnalysisResponse(BaseModel):
     missing_keywords: Optional[Any] = None
     suggestions: Optional[Any] = None
     created_at: datetime
+
+
+# ===== 文件上传 =====
+
+class ResumeUploadResponse(BaseModel):
+    """简历上传响应。"""
+
+    id: int
+    file_name: str
+    file_type: str
+    file_size: int
+    extracted_text: Optional[str] = None
+
+
+class ResumeParseResponse(BaseModel):
+    """简历解析响应 - 包含所有可提取的结构化字段。"""
+
+    name: str = ""
+    phone: str = ""
+    email: str = ""
+    city: str = ""
+    school: str = ""
+    major: str = ""
+    degree: str = ""
+    graduation_year: str = ""
+    skills: List[str] = Field(default_factory=list)
+    experience: List[Dict[str, Any]] = Field(default_factory=list)
+    projects: List[Dict[str, Any]] = Field(default_factory=list)
+    languages: List[str] = Field(default_factory=list)
+    certificates: List[str] = Field(default_factory=list)
+
+
+class ProfileImportRequest(BaseModel):
+    """资料导入请求 - 用户确认后的解析结果。"""
+
+    school: Optional[str] = None
+    major: Optional[str] = None
+    degree: Optional[str] = None
+    graduation_year: Optional[str] = None
+    phone: Optional[str] = None
+    skills: Optional[str] = None  # 逗号分隔的字符串
+    experience_json: Optional[List[Dict[str, Any]]] = None
+    projects_json: Optional[List[Dict[str, Any]]] = None
+
+
+class ProfileImportResponse(BaseModel):
+    """资料导入响应。"""
+
+    success: bool
+    message: str
+    updated_fields: List[str] = Field(default_factory=list)

@@ -60,6 +60,23 @@ class QuestionBankCreate(BaseModel):
     source: Optional[str] = None
 
 
+class QuestionBankUpdate(BaseModel):
+    """更新题目请求（管理员），所有字段可选。"""
+
+    job_category: Optional[str] = None
+    question: Optional[str] = None
+    answer: Optional[str] = None
+    question_type: Optional[str] = None
+    difficulty: Optional[str] = None
+    source: Optional[str] = None
+
+
+class QuestionBankBatchCreate(BaseModel):
+    """批量导入题目请求（管理员）。"""
+
+    items: List[QuestionBankCreate]
+
+
 class InterviewTipCreate(BaseModel):
     """创建/更新面试技巧请求（管理员）。"""
 
