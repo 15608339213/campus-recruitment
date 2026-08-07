@@ -71,8 +71,8 @@ services:
       DATABASE_URL: postgresql+asyncpg://campus:campus123@postgres:5432/campus_recruitment
       REDIS_URL: redis://redis:6379/0
       SECRET_KEY: ${SECRET_KEY:-09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7}
-      # CORS：通过环境变量配置服务器 IP，默认允许所有来源
-      BACKEND_CORS_ORIGINS: '["*"]'
+      # CORS：仅允许服务器自身和本地开发环境
+      BACKEND_CORS_ORIGINS: '["http://120.53.31.101","http://localhost:5173","http://localhost:3000"]'
       COOKIE_SECURE: "false"
       COOKIE_SAMESITE: "lax"
       # AI 配置（用户也可在前端「AI 设置」页面自行配置）

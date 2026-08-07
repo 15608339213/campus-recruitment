@@ -16,7 +16,7 @@ from typing import Optional, List, Dict, Any
 from typing_extensions import Annotated
 
 import httpx
-from fastapi import APIRouter, HTTPException, Response, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -132,16 +132,77 @@ async def register(
     )
 
 
+# ===== 登录速率限制 =====
+async def _check_login_rate_limit(ip: str) -> None:
+    """检查登录失败次数。超过限制抛出 HTTPException。"""
+    import redis.asyncio as aioredis
+
+    try:
+        r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        key = f"login_fail:{ip}"
+        attempts = await r.get(key)
+        if attempts and int(attempts) >= settings.LOGIN_MAX_ATTEMPTS:
+            ttl = await r.ttl(key)
+            minutes = max(1, ttl // 60) if ttl > 0 else settings.LOGIN_LOCKOUT_MINUTES
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"登录失败次数过多，请 {minutes} 分钟后重试",
+            )
+        await r.aclose()
+    except aioredis.ConnectionError:
+        pass  # Redis 不可用时跳过限流
+
+
+async def _record_login_failure(ip: str) -> None:
+    """记录一次登录失败。"""
+    import redis.asyncio as aioredis
+
+    try:
+        r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        key = f"login_fail:{ip}"
+        await r.incr(key)
+        await r.expire(key, settings.LOGIN_LOCKOUT_MINUTES * 60)
+        await r.aclose()
+    except aioredis.ConnectionError:
+        pass
+
+
+async def _clear_login_failures(ip: str) -> None:
+    """登录成功后清除失败记录。"""
+    import redis.asyncio as aioredis
+
+    try:
+        r = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        await r.delete(f"login_fail:{ip}")
+        await r.aclose()
+    except aioredis.ConnectionError:
+        pass
+
+
 # ===== 登录 =====
 @router.post("/login", response_model=Token)
 async def login(
     credentials: UserLogin,
     db: DBSession,
+    request: Request,
     response: Response,
 ) -> Token:
     """邮箱密码登录，成功后通过 httpOnly cookie 下发 JWT。"""
+    client_ip = request.client.host if request.client else "unknown"
+
+    # 1. 检查是否被锁定
+    await _check_login_rate_limit(client_ip)
+
+    # 2. 登录
     service = AuthService(db)
-    user, access_token, refresh_token = await service.login(credentials)
+    try:
+        user, access_token, refresh_token = await service.login(credentials)
+    except HTTPException:
+        await _record_login_failure(client_ip)
+        raise
+
+    # 3. 登录成功，清除失败记录
+    await _clear_login_failures(client_ip)
 
     _set_auth_cookies(response, access_token, refresh_token)
 

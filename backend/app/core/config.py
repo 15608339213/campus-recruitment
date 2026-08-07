@@ -69,6 +69,23 @@ class Settings(BaseSettings):
     # ===== Redis =====
     REDIS_URL: str = ""
 
+    # ===== 安全配置 =====
+    # 登录失败锁定：同一IP 5次失败后锁定30分钟
+    LOGIN_MAX_ATTEMPTS: int = 5
+    LOGIN_LOCKOUT_MINUTES: int = 30
+    # 注册速率限制：同一IP每小时最多3次
+    REGISTER_RATE_PER_HOUR: int = 3
+    # 文件上传限制
+    MAX_UPLOAD_SIZE_MB: int = 5
+    ALLOWED_UPLOAD_TYPES: list[str] = [
+        "image/jpeg", "image/png", "image/webp",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]
+    # 服务器IP（用于 CORS 白名单 + HTTPS 重定向）
+    SERVER_IP: str = "120.53.31.101"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _ensure_async_postgres(cls, v: Any) -> Any:
