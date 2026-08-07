@@ -12,6 +12,7 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.ai_provider import router as ai_provider_router
 from app.api.analysis import router as analysis_router
@@ -81,6 +82,12 @@ def create_app() -> FastAPI:
     app.include_router(analysis_router, prefix=api_prefix)
     app.include_router(interview_router, prefix=api_prefix)
     app.include_router(admin_router, prefix=api_prefix)
+
+    # ===== 静态文件（上传目录）=====
+    import os
+    os.makedirs("uploads/avatars", exist_ok=True)
+    os.makedirs("uploads/resumes", exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
     # ===== 健康检查 =====
     @app.get(f"{api_prefix}/health", tags=["系统"])
