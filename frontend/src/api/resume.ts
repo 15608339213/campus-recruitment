@@ -20,3 +20,39 @@ export function getResumeDetail(id: number) {
 export function downloadResumePdf(id: number) {
   return http.download(`/resume/${id}/pdf`)
 }
+
+// ===== 简历模板 =====
+
+export interface ResumeTemplate {
+  id: number
+  name: string
+  category: string
+  description: string | null
+  html_structure: string
+  css_rules: string
+  preview_url: string | null
+  is_builtin: boolean
+  is_public: boolean
+  downloads: number
+}
+
+// 获取模板列表
+export function getTemplates() {
+  return http.get<{ items: ResumeTemplate[]; total: number }>('/resume/templates')
+}
+
+// ===== 简历分析 =====
+
+export interface ResumeAnalysisResult {
+  id: number
+  ats_score: number | null
+  skills_matched: string[] | null
+  missing_keywords: string[] | null
+  suggestions: { title: string; detail: string }[] | null
+  created_at: string
+}
+
+// AI 分析简历
+export function analyzeResume(data: { resume_text: string; target_job_category?: string }) {
+  return http.post<ResumeAnalysisResult>('/resume/analyze', data)
+}

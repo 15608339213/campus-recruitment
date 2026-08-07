@@ -9,6 +9,7 @@ from app.models.feedback import Feedback, VisitLog
 from app.models.interview import InterviewTip, QuestionBank
 from app.models.job import Favorite, Job, JobTag
 from app.models.resume import Resume
+from app.models.resume_template import ResumeAnalysis, ResumeTemplate
 from app.models.user import OAuthAccount, User, UserProfile
 
 __all__ = [
@@ -21,6 +22,8 @@ __all__ = [
     "JobTag",
     "Favorite",
     "Resume",
+    "ResumeTemplate",
+    "ResumeAnalysis",
     "InterviewTip",
     "QuestionBank",
     "Feedback",

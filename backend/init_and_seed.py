@@ -343,6 +343,111 @@ def _generate_job(index: int) -> dict:
     }
 
 
+# ===== 10套内置简历模板 =====
+RESUME_TEMPLATES: list[dict] = [
+    {
+        "name": "经典黑白",
+        "category": "经典",
+        "description": "传统两栏布局，适合金融、咨询等传统行业",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume classic"><div class="header"><h1>{{name}}</h1><p>{{email}} | {{phone}}</p></div><div class="body"><div class="left"><div class="section"><h2>教育背景</h2>{{#education}}<p><b>{{school}}</b> - {{major}} · {{degree}}<br>{{period}}</p>{{/education}}</div><div class="section"><h2>技能</h2><p>{{skills}}</p></div></div><div class="right"><div class="section"><h2>工作经历</h2>{{#experience}}<h3>{{company}} - {{role}}</h3><p class="period">{{period}}</p><p>{{description}}</p>{{/experience}}</div><div class="section"><h2>项目经历</h2>{{#projects}}<h3>{{name}}</h3><p>{{description}}</p><p class="tech">{{tech_stack}}</p>{{/projects}}</div><div class="section"><h2>自我评价</h2><p>{{self_evaluation}}</p></div></div></div></div>',
+        "css_rules": '.resume.classic{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;color:#333}.header{text-align:center;border-bottom:2px solid #222;padding-bottom:15px;margin-bottom:20px}.header h1{font-size:28px;margin:0 0 6px}.body{display:flex;gap:30px}.left{width:30%}.right{width:70%}.section{margin-bottom:18px}.section h2{font-size:16px;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:8px}.left h2{border-bottom:2px solid #222}.period,.tech{font-size:12px;color:#888}',
+        "preview_url": "",
+    },
+    {
+        "name": "现代简约",
+        "category": "现代",
+        "description": "清爽配色，圆角卡片，适合互联网、科技行业",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume modern"><div class="profile"><div class="avatar"></div><div class="info"><h1>{{name}}</h1><p>{{email}} | {{phone}} | {{school}}</p></div></div><div class="grid"><div class="card"><h2>教育背景</h2>{{#education}}<div class="item"><b>{{school}}</b><span>{{major}} · {{degree}}</span><span>{{period}}</span></div>{{/education}}</div><div class="card"><h2>技能</h2><div class="skills">{{#skills}}<span class="tag">{{.}}</span>{{/skills}}</div></div><div class="card"><h2>工作经历</h2>{{#experience}}<div class="item"><b>{{company}}</b><span>{{role}}</span><span>{{period}}</span><p>{{description}}</p></div>{{/experience}}</div><div class="card"><h2>项目经历</h2>{{#projects}}<div class="item"><b>{{name}}</b><p>{{description}}</p><span class="tech">{{tech_stack}}</span></div>{{/projects}}</div><div class="card"><h2>自我评价</h2><p>{{self_evaluation}}</p></div></div></div>',
+        "css_rules": '.resume.modern{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;background:#f8fafc}.profile{display:flex;align-items:center;gap:20px;padding:30px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:12px;margin-bottom:20px}.avatar{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,0.3)}.info h1{font-size:26px;margin:0 0 4px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.04)}.card h2{font-size:15px;color:#667eea;margin:0 0 10px;border-bottom:2px solid #667eea;padding-bottom:6px}.item{margin-bottom:10px}.item b{display:block;font-size:14px}.item span{font-size:12px;color:#888;margin-right:10px}.tag{display:inline-block;background:#eef2ff;color:#667eea;padding:3px 10px;border-radius:20px;font-size:12px;margin:2px}.tech{font-size:12px;color:#aaa}@media(max-width:600px){.grid{grid-template-columns:1fr}}',
+        "preview_url": "",
+    },
+    {
+        "name": "创意设计",
+        "category": "创意",
+        "description": "大胆配色，视觉冲击力强，适合设计、市场岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume creative"><div class="hero"><h1>{{name}}</h1><p class="subtitle">{{school}} · {{major}}</p><p class="contact">{{email}} | {{phone}}</p></div><div class="content"><div class="section"><h2>🎓 教育背景</h2>{{#education}}<p><b>{{school}}</b> - {{major}} · {{degree}} ({{period}})</p>{{/education}}</div><div class="section"><h2>💡 技能</h2><p>{{skills}}</p></div><div class="section"><h2>💼 工作经历</h2>{{#experience}}<div class="exp"><span class="company">{{company}}</span><span class="role">{{role}}</span><span class="period">{{period}}</span><p>{{description}}</p></div>{{/experience}}</div><div class="section"><h2>🚀 项目经历</h2>{{#projects}}<div class="exp"><span class="company">{{name}}</span><p>{{description}}</p><span class="period">{{tech_stack}}</span></div>{{/projects}}</div><div class="section"><h2>✨ 自我评价</h2><p>{{self_evaluation}}</p></div></div></div>',
+        "css_rules": '.resume.creative{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif}.hero{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;padding:40px 30px;text-align:center;border-radius:0 0 30px 30px}.hero h1{font-size:32px;margin:0}.subtitle{font-size:16px;opacity:0.9;margin:6px 0}.contact{font-size:13px;opacity:0.8}.content{padding:20px 30px}.section h2{font-size:18px;color:#f5576c;margin:20px 0 10px}.exp{margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed #eee}.company{font-size:15px;font-weight:bold;display:block}.role{font-size:14px;color:#f5576c}.period{font-size:12px;color:#aaa;float:right}',
+        "preview_url": "",
+    },
+    {
+        "name": "极简白",
+        "category": "极简",
+        "description": "大量留白，极简排版，适合注重简洁的岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume minimal"><div class="top"><h1>{{name}}</h1><p>{{email}} · {{phone}} · {{school}}</p></div><hr><h2>教育背景</h2>{{#education}}<p>{{school}} / {{major}} / {{degree}} / {{period}}</p>{{/education}}<h2>技能</h2><p>{{skills}}</p><h2>工作经历</h2>{{#experience}}<p><b>{{company}}</b> — {{role}}<br><span class="grey">{{period}}</span><br>{{description}}</p>{{/experience}}<h2>项目经历</h2>{{#projects}}<p><b>{{name}}</b><br>{{description}}<br><span class="grey">{{tech_stack}}</span></p>{{/projects}}<h2>自我评价</h2><p>{{self_evaluation}}</p></div>',
+        "css_rules": '.resume.minimal{max-width:700px;margin:40px auto;padding:40px;font-family:"Georgia",serif;color:#1a1a1a;line-height:1.8}.top{text-align:center;margin-bottom:30px}.top h1{font-size:30px;letter-spacing:4px;margin:0}.top p{font-size:13px;color:#666;margin:6px 0 0}hr{border:0;border-top:1px solid #1a1a1a;margin:20px 0}h2{font-size:14px;text-transform:uppercase;letter-spacing:3px;margin:28px 0 10px;color:#1a1a1a}.grey{font-size:12px;color:#999}p{margin:8px 0;font-size:14px}',
+        "preview_url": "",
+    },
+    {
+        "name": "学术风格",
+        "category": "学术",
+        "description": "严谨排版，适合学术、研究、教育岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume academic"><h1 class="name">{{name}}</h1><p class="contact">{{email}} | {{phone}} | {{school}}</p><div class="section"><h2>EDUCATION</h2>{{#education}}<div class="entry"><div class="entry-header"><b>{{school}}</b><span>{{period}}</span></div><p>{{major}} · {{degree}}</p></div>{{/education}}</div><div class="section"><h2>SKILLS</h2><p>{{skills}}</p></div><div class="section"><h2>EXPERIENCE</h2>{{#experience}}<div class="entry"><div class="entry-header"><b>{{company}}</b><span>{{period}}</span></div><p><i>{{role}}</i></p><p>{{description}}</p></div>{{/experience}}</div><div class="section"><h2>PROJECTS</h2>{{#projects}}<div class="entry"><div class="entry-header"><b>{{name}}</b></div><p>{{description}}</p><p class="tech">{{tech_stack}}</p></div>{{/projects}}</div><div class="section"><h2>SUMMARY</h2><p>{{self_evaluation}}</p></div></div>',
+        "css_rules": '.resume.academic{max-width:780px;margin:0 auto;font-family:"Times New Roman",serif;padding:30px 40px;border:1px solid #ccc}.name{font-size:26px;text-align:center;text-transform:uppercase;letter-spacing:2px;margin:0}.contact{text-align:center;font-size:12px;color:#555;margin:4px 0 20px}.section{margin-bottom:20px}.section h2{font-size:13px;border-bottom:1.5px solid #222;padding-bottom:3px;margin-bottom:10px;letter-spacing:2px}.entry{margin-bottom:12px}.entry-header{display:flex;justify-content:space-between;font-size:14px}.entry-header span{font-size:12px;color:#666}.entry p{font-size:13px;margin:3px 0}.tech{font-size:11px;color:#999;font-style:italic}',
+        "preview_url": "",
+    },
+    {
+        "name": "科技蓝",
+        "category": "科技",
+        "description": "深蓝配色，数据驱动展示，适合技术、数据岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume tech"><div class="sidebar"><div class="avatar"></div><h1>{{name}}</h1><p class="role-title">{{major}}</p><div class="block"><h3>联系方式</h3><p>{{email}}<br>{{phone}}</p></div><div class="block"><h3>教育背景</h3>{{#education}}<p>{{school}}<br>{{major}} · {{degree}}<br>{{period}}</p>{{/education}}</div><div class="block"><h3>技能</h3>{{#skills}}<div class="skill-bar"><span>{{.}}</span></div>{{/skills}}</div></div><div class="main"><h2>工作经历</h2>{{#experience}}<div class="exp"><h3>{{company}} <span>{{period}}</span></h3><p class="role">{{role}}</p><p>{{description}}</p></div>{{/experience}}<h2>项目经历</h2>{{#projects}}<div class="exp"><h3>{{name}}</h3><p>{{description}}</p><p class="tags">{{tech_stack}}</p></div>{{/projects}}<h2>自我评价</h2><p>{{self_evaluation}}</p></div></div>',
+        "css_rules": '.resume.tech{display:flex;max-width:850px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;min-height:100vh}.sidebar{width:280px;background:#1e293b;color:#e2e8f0;padding:30px 20px}.sidebar h1{font-size:22px;margin:16px 0 4px}.role-title{font-size:13px;color:#94a3b8}.block{margin-top:24px}.block h3{font-size:12px;text-transform:uppercase;color:#64748b;border-bottom:1px solid #334155;padding-bottom:4px;margin-bottom:8px}.skill-bar{background:#334155;padding:5px 10px;border-radius:4px;margin:4px 0;font-size:12px}.main{flex:1;padding:30px}.main h2{font-size:16px;color:#1e293b;border-bottom:2px solid #3b82f6;padding-bottom:4px;margin:20px 0 12px}.exp{margin-bottom:14px}.exp h3{font-size:14px;margin:0}.exp h3 span{font-size:12px;color:#94a3b8;float:right}.role{font-size:13px;color:#3b82f6;margin:2px 0}.tags{font-size:12px;color:#64748b}@media(max-width:700px){.resume.tech{flex-direction:column}.sidebar{width:100%}}',
+        "preview_url": "",
+    },
+    {
+        "name": "商务精英",
+        "category": "经典",
+        "description": "深色调，适合投行、咨询、管理培训生",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume business"><div class="header"><div><h1>{{name}}</h1><p class="title">{{major}} · {{school}}</p></div><div class="contact-col"><p>{{email}}<br>{{phone}}</p></div></div><div class="body"><div class="section"><h2>教育背景</h2>{{#education}}<p>{{school}} · {{major}} · {{degree}} · {{period}}</p>{{/education}}</div><div class="section"><h2>核心能力</h2><p>{{skills}}</p></div><div class="section"><h2>工作经历</h2>{{#experience}}<div class="exp"><div class="exp-left"><b>{{company}}</b><br><span>{{period}}</span></div><div class="exp-right"><b>{{role}}</b><p>{{description}}</p></div></div>{{/experience}}</div><div class="section"><h2>项目经验</h2>{{#projects}}<div class="exp"><div class="exp-left"><b>{{name}}</b></div><div class="exp-right"><p>{{description}}</p><span class="grey">{{tech_stack}}</span></div></div>{{/projects}}</div><div class="section"><h2>个人陈述</h2><p>{{self_evaluation}}</p></div></div></div>',
+        "css_rules": '.resume.business{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;background:#fff}.header{display:flex;justify-content:space-between;background:#1a1a2e;color:#fff;padding:25px 30px}.header h1{font-size:28px;margin:0}.title{font-size:14px;opacity:0.8}.contact-col{text-align:right;font-size:13px}.body{padding:20px 30px}.section{margin-bottom:20px}.section h2{font-size:15px;color:#1a1a2e;border-bottom:2px solid #e94560;padding-bottom:4px;margin-bottom:10px}.exp{display:flex;gap:20px;margin-bottom:12px}.exp-left{width:160px;font-size:13px}.exp-left span{font-size:11px;color:#888}.exp-right{flex:1;font-size:13px}.grey{font-size:12px;color:#999}',
+        "preview_url": "",
+    },
+    {
+        "name": "清新绿",
+        "category": "现代",
+        "description": "绿色主题，亲和力强，适合教育、HR、公益岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume fresh"><div class="banner"><h1>{{name}}</h1><p>{{email}} · {{phone}} · {{school}}</p></div><div class="content"><div class="section"><h2>教育背景</h2>{{#education}}<p><b>{{school}}</b> - {{major}} · {{degree}} ({{period}})</p>{{/education}}</div><div class="section"><h2>技能专长</h2><p>{{skills}}</p></div><div class="section"><h2>工作经历</h2>{{#experience}}<div class="item"><div class="dot"></div><div><b>{{company}} · {{role}}</b><span>{{period}}</span><p>{{description}}</p></div></div>{{/experience}}</div><div class="section"><h2>项目经历</h2>{{#projects}}<div class="item"><div class="dot"></div><div><b>{{name}}</b><p>{{description}}</p><span>{{tech_stack}}</span></div></div>{{/projects}}</div><div class="section"><h2>自我评价</h2><p>{{self_evaluation}}</p></div></div></div>',
+        "css_rules": '.resume.fresh{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;background:#f0fdf4}.banner{background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:35px;text-align:center}.banner h1{font-size:28px;margin:0}.banner p{font-size:13px;opacity:0.9;margin:8px 0 0}.content{padding:20px 30px}.section h2{font-size:15px;color:#059669;border-left:3px solid #10b981;padding-left:10px;margin:20px 0 10px}.item{display:flex;gap:12px;margin-bottom:12px}.dot{width:8px;height:8px;background:#10b981;border-radius:50%;margin-top:6px;flex-shrink:0}.item b{font-size:14px;display:block}.item span{font-size:12px;color:#888}',
+        "preview_url": "",
+    },
+    {
+        "name": "双栏专业",
+        "category": "经典",
+        "description": "左右两栏，信息密度高，适合简历内容丰富的求职者",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume twocol"><div class="left"><h1>{{name}}</h1><p class="contact">{{email}}<br>{{phone}}<br>{{school}}</p><h2>教育背景</h2>{{#education}}<p>{{school}}<br>{{major}} · {{degree}}<br>{{period}}</p>{{/education}}<h2>技能</h2>{{#skills}}<p class="skill">{{.}}</p>{{/skills}}</div><div class="right"><h2>工作经历</h2>{{#experience}}<h3>{{company}} - {{role}}</h3><span>{{period}}</span><p>{{description}}</p>{{/experience}}<h2>项目经历</h2>{{#projects}}<h3>{{name}}</h3><p>{{description}}</p><p class="tech">{{tech_stack}}</p>{{/projects}}<h2>自我评价</h2><p>{{self_evaluation}}</p></div></div>',
+        "css_rules": '.resume.twocol{display:flex;max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif}.left{width:35%;background:#2d3436;color:#dfe6e9;padding:30px 20px}.left h1{font-size:22px;margin:0;border-bottom:2px solid #636e72;padding-bottom:10px}.contact{font-size:12px;opacity:0.8;margin:10px 0}.left h2{font-size:13px;margin:20px 0 8px;letter-spacing:1px}.skill{font-size:12px;padding:3px 0;border-bottom:1px solid #636e72}.right{width:65%;padding:30px 25px}.right h2{font-size:15px;border-bottom:2px solid #2d3436;padding-bottom:4px;margin:20px 0 10px}.right h3{font-size:14px;margin:0}.right span{font-size:12px;color:#888}.tech{font-size:12px;color:#aaa}',
+        "preview_url": "",
+    },
+    {
+        "name": "卡片式布局",
+        "category": "现代",
+        "description": "卡片化信息呈现，视觉清晰，适合产品、运营岗位",
+        "is_builtin": True,
+        "is_public": True,
+        "html_structure": '<div class="resume cards"><div class="intro"><h1>{{name}}</h1><p>{{email}} · {{phone}} · {{school}} · {{major}}</p></div><div class="card-grid"><div class="card"><h2>教育背景</h2>{{#education}}<p><b>{{school}}</b><br>{{major}} · {{degree}}<br>{{period}}</p>{{/education}}</div><div class="card"><h2>技能</h2>{{#skills}}<span class="pill">{{.}}</span>{{/skills}}</div><div class="card wide"><h2>工作经历</h2>{{#experience}}<div class="entry"><b>{{company}} - {{role}}</b><span>{{period}}</span><p>{{description}}</p></div>{{/experience}}</div><div class="card wide"><h2>项目经历</h2>{{#projects}}<div class="entry"><b>{{name}}</b><p>{{description}}</p><span class="muted">{{tech_stack}}</span></div>{{/projects}}</div><div class="card wide"><h2>自我评价</h2><p>{{self_evaluation}}</p></div></div></div>',
+        "css_rules": '.resume.cards{max-width:800px;margin:0 auto;font-family:"Microsoft YaHei",sans-serif;background:#f3f4f6;padding:20px}.intro{text-align:center;padding:20px;background:#fff;border-radius:12px;margin-bottom:16px}.intro h1{font-size:26px;margin:0}.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:#fff;border-radius:10px;padding:16px}.card.wide{grid-column:span 2}.card h2{font-size:14px;color:#6366f1;margin:0 0 8px;border-bottom:2px solid #eef2ff;padding-bottom:6px}.pill{display:inline-block;background:#eef2ff;color:#6366f1;padding:3px 10px;border-radius:20px;font-size:11px;margin:2px}.entry{margin-bottom:10px}.entry b{font-size:14px;display:block}.entry span{font-size:11px;color:#888}.muted{font-size:12px;color:#aaa}@media(max-width:600px){.card-grid{grid-template-columns:1fr}.card.wide{grid-column:span 1}}',
+        "preview_url": "",
+    },
+]
+
+
 async def init_and_seed() -> None:
     """初始化数据库 + 插入种子数据。"""
     from sqlalchemy import func, select
@@ -355,6 +460,7 @@ async def init_and_seed() -> None:
         Job,
         JobTag,
         QuestionBank,
+        ResumeTemplate,
         User,
         UserProfile,
     )
@@ -429,6 +535,19 @@ async def init_and_seed() -> None:
 
         await session.commit()
         print("      完成")
+
+    # 5. 简历模板
+    print("[5/5] 生成简历模板...")
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(func.count()).select_from(ResumeTemplate))
+        existing = result.scalar() or 0
+        if existing >= 10:
+            print(f"      已有 {existing} 套模板，跳过")
+        else:
+            for tpl in RESUME_TEMPLATES:
+                session.add(ResumeTemplate(**tpl))
+            await session.commit()
+            print(f"      完成，共 {len(RESUME_TEMPLATES)} 套模板")
 
     await engine.dispose()
     print("\n数据库初始化完毕！")

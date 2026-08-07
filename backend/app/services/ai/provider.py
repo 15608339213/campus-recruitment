@@ -27,21 +27,21 @@ class AIProviderError(Exception):
 
 # ===== 内置 AI 提供商预设 =====
 BUILTIN_PROVIDERS = {
+    "openai": {
+        "name": "OpenAI (GPT 系列)",
+        "base_url": "https://api.openai.com",
+        "models": ["gpt-4.1", "gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "o3-mini"],
+        "default_model": "gpt-4o",
+        "website": "https://platform.openai.com",
+        "description": "业界标杆，综合能力最强。GPT-4.1 最新旗舰",
+    },
     "deepseek": {
         "name": "DeepSeek (深度求索)",
         "base_url": "https://api.deepseek.com",
         "models": ["deepseek-chat", "deepseek-reasoner"],
         "default_model": "deepseek-chat",
         "website": "https://platform.deepseek.com",
-        "description": "高性价比，擅长中文理解和代码生成",
-    },
-    "openai": {
-        "name": "OpenAI (GPT 系列)",
-        "base_url": "https://api.openai.com",
-        "models": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
-        "default_model": "gpt-4o-mini",
-        "website": "https://platform.openai.com",
-        "description": "业界标杆，综合能力最强",
+        "description": "高性价比，擅长中文理解和代码生成，推荐首选",
     },
     "moonshot": {
         "name": "月之暗面 (Kimi)",
@@ -62,10 +62,10 @@ BUILTIN_PROVIDERS = {
     "qwen": {
         "name": "通义千问 (Qwen)",
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode",
-        "models": ["qwen-turbo", "qwen-plus", "qwen-max"],
-        "default_model": "qwen-turbo",
+        "models": ["qwen3-max", "qwen-plus", "qwen-turbo"],
+        "default_model": "qwen-plus",
         "website": "https://dashscope.console.aliyun.com",
-        "description": "阿里云出品，中文理解优秀",
+        "description": "阿里云出品，Qwen3-Max 中文最强之一",
     },
     "baichuan": {
         "name": "百川智能 (Baichuan)",
@@ -82,6 +82,33 @@ BUILTIN_PROVIDERS = {
         "default_model": "yi-medium",
         "website": "https://platform.lingyiwanwu.com",
         "description": "李开复创办，中英双语强",
+    },
+    "claude": {
+        "name": "Anthropic Claude",
+        "base_url": "https://api.anthropic.com",
+        "models": ["claude-sonnet-4-20250514", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"],
+        "default_model": "claude-sonnet-4-20250514",
+        "website": "https://console.anthropic.com",
+        "description": "长文本理解与写作顶尖，适合简历优化",
+        "headers": {"x-api-key": "{api_key}", "anthropic-version": "2023-06-01"},
+        "api_style": "anthropic",
+    },
+    "gemini": {
+        "name": "Google Gemini",
+        "base_url": "https://generativelanguage.googleapis.com",
+        "models": ["gemini-2.5-pro", "gemini-2.0-flash", "gemini-1.5-pro"],
+        "default_model": "gemini-2.0-flash",
+        "website": "https://aistudio.google.com",
+        "description": "免费额度大，多模态能力最强",
+        "api_style": "gemini",
+    },
+    "doubao": {
+        "name": "豆包 (字节跳动)",
+        "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+        "models": ["doubao-pro-32k", "doubao-lite-32k"],
+        "default_model": "doubao-pro-32k",
+        "website": "https://console.volcengine.com/ark",
+        "description": "中文优化，响应速度快，字节出品",
     },
     "custom": {
         "name": "自定义服务商",
