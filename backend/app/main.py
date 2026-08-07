@@ -20,6 +20,7 @@ from app.api.feedback import router as feedback_router
 from app.api.interview import router as interview_router
 from app.api.jobs import router as jobs_router
 from app.api.resume import router as resume_router
+from app.api.admin import router as admin_router
 from app.core.config import settings
 
 
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(feedback_router, prefix=api_prefix)
     app.include_router(analysis_router, prefix=api_prefix)
     app.include_router(interview_router, prefix=api_prefix)
+    app.include_router(admin_router, prefix=api_prefix)
 
     # ===== 健康检查 =====
     @app.get(f"{api_prefix}/health", tags=["系统"])

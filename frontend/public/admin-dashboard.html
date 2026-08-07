@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>秋招助手 - 监控看板</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{background:#1e293b;padding:16px 24px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #334155}
+.header h1{font-size:20px;color:#f1f5f9}
+.header .refresh{color:#94a3b8;font-size:12px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;padding:20px}
+.kpi-card{background:#1e293b;border-radius:10px;padding:18px;border:1px solid #334155}
+.kpi-card .label{font-size:12px;color:#64748b;text-transform:uppercase;margin-bottom:6px}
+.kpi-card .value{font-size:28px;font-weight:700;color:#f1f5f9}
+.kpi-card .sub{font-size:11px;color:#94a3b8;margin-top:4px}
+.kpi-card.warn{border-color:#f59e0b}
+.kpi-card.danger{border-color:#ef4444}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 20px 20px}
+.chart-box{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
+.chart-box h3{font-size:14px;color:#94a3b8;margin-bottom:12px}
+.chart{height:280px}
+table{width:100%;border-collapse:collapse;margin-top:12px}
+th,td{padding:10px 12px;text-align:left;font-size:13px;border-bottom:1px solid #334155}
+th{color:#64748b;font-weight:500}
+td{color:#cbd5e1}
+.feedback-pending{display:inline-block;background:#f59e0b;color:#000;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.status-ok{color:#22c55e}
+.status-warn{color:#f59e0b}
+.loading{display:flex;justify-content:center;align-items:center;height:200px;color:#64748b}
+@media(max-width:768px){.charts-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>秋招助手 智能监控看板</h1>
+  <span class="refresh" id="refreshInfo">加载中...</span>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card"><div class="label">注册用户</div><div class="value" id="kpiUsers">-</div><div class="sub" id="kpiUsersSub">--</div></div>
+  <div class="kpi-card"><div class="label">活跃岗位</div><div class="value" id="kpiJobs">-</div><div class="sub">总岗位数</div></div>
+  <div class="kpi-card"><div class="label">AI简历</div><div class="value" id="kpiResumes">-</div><div class="sub" id="kpiAnalyses">--</div></div>
+  <div class="kpi-card"><div class="label">待处理反馈</div><div class="value" id="kpiFeedback">-</div><div class="sub" id="kpiFeedbackTotal">--</div></div>
+  <div class="kpi-card"><div class="label">CPU</div><div class="value" id="kpiCpu">-</div><div class="sub" id="kpiCpuSub">--</div></div>
+  <div class="kpi-card"><div class="label">内存</div><div class="value" id="kpiMem">-</div><div class="sub" id="kpiMemSub">--</div></div>
+</div>
+
+<div class="charts-grid">
+  <div class="chart-box"><h3>近7天注册趋势</h3><div class="chart" id="chartReg"></div></div>
+  <div class="chart-box"><h3>岗位行业分布</h3><div class="chart" id="chartJobs"></div></div>
+</div>
+
+<div class="charts-grid" style="padding-bottom:24px">
+  <div class="chart-box" style="grid-column:span 2"><h3>系统资源</h3><div class="chart" id="chartSys" style="height:250px"></div></div>
+</div>
+
+<script>
+const API = '/api/v1/admin/stats';
+
+async function fetchData() {
+  const token = localStorage.getItem('access_token');
+  try {
+    const resp = await fetch(API, { headers: { Authorization: `Bearer ${token}` } });
+    if (resp.status === 401) {
+      document.body.innerHTML = '<div class="loading"><h2>请先以管理员账号登录</h2></div>';
+      return;
+    }
+    const data = await resp.json();
+    render(data);
+    document.getElementById('refreshInfo').textContent = '更新于 ' + new Date(data.timestamp).toLocaleTimeString();
+  } catch (e) {
+    document.getElementById('refreshInfo').textContent = '加载失败: ' + e.message;
+  }
+}
+
+function render(d) {
+  // KPI
+  document.getElementById('kpiUsers').textContent = d.users.total;
+  document.getElementById('kpiUsersSub').textContent = '本周新增 +' + d.users.new_this_week;
+  document.getElementById('kpiJobs').textContent = d.jobs.total;
+  document.getElementById('kpiResumes').textContent = d.content.resumes;
+  document.getElementById('kpiAnalyses').textContent = 'AI分析 ' + d.content.analyses + ' | 模板 ' + d.content.templates;
+  document.getElementById('kpiFeedback').textContent = d.feedback.pending;
+  document.getElementById('kpiFeedbackTotal').textContent = '总反馈 ' + d.feedback.total;
+  document.getElementById('kpiCpu').textContent = d.system.cpu_percent + '%';
+  document.getElementById('kpiCpuSub').textContent = '容器 CPU 使用率';
+  document.getElementById('kpiMem').textContent = d.system.memory_percent + '%';
+  document.getElementById('kpiMemSub').textContent = d.system.memory_used_gb + ' / ' + d.system.memory_total_gb + ' GB';
+
+  // 注册趋势图
+  const regChart = echarts.init(document.getElementById('chartReg'));
+  regChart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: d.users.trend.map(t => t.date.slice(5)), axisLabel: { color: '#94a3b8' } },
+    yAxis: { type: 'value', axisLabel: { color: '#94a3b8' } },
+    series: [{ data: d.users.trend.map(t => t.count), type: 'line', smooth: true, areaStyle: { color: '#3b82f6', opacity: 0.2 }, lineStyle: { color: '#3b82f6' }, itemStyle: { color: '#3b82f6' } }],
+    grid: { top: 10, right: 10, bottom: 30, left: 40 }
+  });
+
+  // 岗位分布饼图
+  const jobChart = echarts.init(document.getElementById('chartJobs'));
+  jobChart.setOption({
+    tooltip: { trigger: 'item' },
+    series: [{ type: 'pie', radius: ['45%', '75%'], data: d.jobs.by_category, label: { color: '#94a3b8' }, emphasis: { label: { fontSize: 16, fontWeight: 'bold' } } }],
+    color: ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#22c55e','#06b6d4','#ef4444','#a855f7']
+  });
+
+  // 系统资源仪表盘
+  const sysChart = echarts.init(document.getElementById('chartSys'));
+  sysChart.setOption({
+    tooltip: {},
+    series: [
+      { type: 'gauge', center: ['25%','55%'], radius:'80%', data: [{ value: d.system.cpu_percent, name: 'CPU' }], detail: { fontSize: 20, color: '#f1f5f9' }, title: { color: '#94a3b8' }, axisLine: { lineStyle: { color: [[0.5,'#22c55e'],[0.8,'#f59e0b'],[1,'#ef4444']] } } },
+      { type: 'gauge', center: ['50%','55%'], radius:'80%', data: [{ value: d.system.memory_percent, name: '内存' }], detail: { fontSize: 20, color: '#f1f5f9' }, title: { color: '#94a3b8' }, axisLine: { lineStyle: { color: [[0.5,'#22c55e'],[0.8,'#f59e0b'],[1,'#ef4444']] } } },
+      { type: 'gauge', center: ['75%','55%'], radius:'80%', data: [{ value: Math.round((d.system.disk_used_gb/d.system.disk_total_gb)*100) || 0, name: '磁盘' }], detail: { fontSize: 20, color: '#f1f5f9' }, title: { color: '#94a3b8' }, axisLine: { lineStyle: { color: [[0.5,'#22c55e'],[0.8,'#f59e0b'],[1,'#ef4444']] } } },
+    ]
+  });
+}
+
+fetchData();
+setInterval(fetchData, 30000); // 每30秒刷新
+</script>
+</body>
+</html>

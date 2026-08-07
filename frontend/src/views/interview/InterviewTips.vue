@@ -61,6 +61,18 @@ const categoryCounts = ref<Record<string, number>>({})
 const filterCategory = ref<string>('')
 const filterType = ref<string>('')
 const filterDifficulty = ref<string>('')
+const filterCompany = ref<string>('')
+
+// 公司选项（从来源自动提取）
+const companyOptions = computed(() => {
+  const companies = new Set<string>()
+  questions.value.forEach(q => {
+    if (q.source && q.source.includes('面试题')) {
+      companies.add(q.source.replace('面试题',''))
+    }
+  })
+  return [{ label: '全部', value: '' }, ...Array.from(companies).map(c => ({ label: c, value: c }))]
+})
 
 // 当前查看的技巧
 const currentTip = computed(() => {
@@ -121,6 +133,7 @@ async function loadQuestions() {
       job_category: filterCategory.value || undefined,
       question_type: filterType.value || undefined,
       difficulty: filterDifficulty.value || undefined,
+      company: filterCompany.value || undefined,
       page: questionPage.value,
       page_size: questionPageSize.value,
     })
@@ -158,6 +171,7 @@ function handleResetFilter() {
   filterCategory.value = ''
   filterType.value = ''
   filterDifficulty.value = ''
+  filterCompany.value = ''
   questionPage.value = 1
   loadQuestions()
 }
@@ -310,6 +324,19 @@ onMounted(() => {
                   </n-radio>
                 </n-space>
               </n-radio-group>
+            </div>
+
+            <div class="filter-group">
+              <span class="filter-label">公司</span>
+              <n-select
+                v-model:value="filterCompany"
+                :options="companyOptions"
+                placeholder="全部公司"
+                clearable
+                filterable
+                style="width:200px"
+                @update:value="handleFilterChange"
+              />
             </div>
 
             <n-button size="small" @click="handleResetFilter">

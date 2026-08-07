@@ -53,6 +53,7 @@ export function getQuestionList(params: {
   job_category?: string
   question_type?: string
   difficulty?: string
+  company?: string
   page?: number
   page_size?: number
 }) {
@@ -63,6 +64,7 @@ export function getQuestionList(params: {
   if (params.job_category) queryParams.job_category = params.job_category
   if (params.question_type) queryParams.question_type = params.question_type
   if (params.difficulty) queryParams.difficulty = params.difficulty
+  if (params.company) queryParams.company = params.company
   return http.get<QuestionListResponse>('/interview/questions', { params: queryParams })
 }
 
