@@ -81,7 +81,11 @@ async def list_questions(
     if difficulty:
         conditions.append(QuestionBank.difficulty == difficulty)
     if company:
-        conditions.append(QuestionBank.company == company)
+        # 优先匹配 company 字段，否则从 source 字段模糊匹配
+        from sqlalchemy import or_
+        conditions.append(
+            or_(QuestionBank.company == company, QuestionBank.source.contains(company))
+        )
 
     # 总数
     count_query = select(func.count(QuestionBank.id))
