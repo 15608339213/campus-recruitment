@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useJobStore } from '@/stores/job'
 import { useAuthStore } from '@/stores/auth'
@@ -12,13 +12,11 @@ import {
   NInput,
   NEmpty,
   NSpin,
-  NPagination,
   NIcon,
   NRadioGroup,
   NRadio,
-  NCollapse,
-  NCollapseItem,
   NDivider,
+  NSkeleton,
   useMessage,
 } from 'naive-ui'
 import {
@@ -49,6 +47,36 @@ const route = useRoute()
 const jobStore = useJobStore()
 const authStore = useAuthStore()
 const message = useMessage()
+
+// 无限滚动：观察底部哨兵元素
+const sentinelRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
+
+function setupObserver() {
+  if (observer) observer.disconnect()
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0].isIntersecting && jobStore.hasMore && !jobStore.loadingMore) {
+        jobStore.loadMoreJobs()
+      }
+    },
+    { threshold: 0.1 }
+  )
+  // 等待 DOM 更新后挂载
+  setTimeout(() => {
+    if (sentinelRef.value) observer?.observe(sentinelRef.value)
+  }, 100)
+}
+
+onMounted(() => {
+  jobStore.fetchFilterOptions()
+  jobStore.fetchJobs(true)
+})
+onUnmounted(() => observer?.disconnect())
+
+// 数据加载完后挂载观察器
+watch(() => jobStore.jobs.length, () => setupObserver())
+watch(() => jobStore.loading, (val) => { if (!val) setupObserver() })
 
 // 排序选项
 const sortOptions = [
@@ -124,10 +152,6 @@ function handleSortChange(value: string) {
   jobStore.updateFilter({ sort_by: value as 'latest' | 'deadline' | 'salary' })
 }
 
-function handlePageChange(page: number) {
-  jobStore.changePage(page)
-}
-
 function handleReset() {
   selectedSalaryRange.value = ''
   jobStore.resetFilter()
@@ -151,11 +175,6 @@ watch(
   },
   { immediate: true }
 )
-
-onMounted(() => {
-  jobStore.fetchFilterOptions()
-  jobStore.fetchJobs()
-})
 </script>
 
 <template>
@@ -312,14 +331,25 @@ onMounted(() => {
           </n-space>
         </div>
 
-        <!-- 加载中 -->
-        <div v-if="jobStore.loading" class="loading-wrapper">
-          <n-spin size="large" />
+        <!-- 加载中（首次）骨架屏 -->
+        <div v-if="jobStore.loading && jobStore.jobs.length === 0" class="loading-wrapper">
+          <div class="skeleton-list">
+            <n-card v-for="i in 5" :key="i" class="job-card" :bordered="false">
+              <div class="job-card-content">
+                <div class="job-card-main" style="width:100%">
+                  <n-skeleton text style="width:60%;height:22px;margin-bottom:8px" />
+                  <n-skeleton text style="width:30%;height:16px;margin-bottom:12px" />
+                  <n-skeleton text style="width:80%;height:14px;margin-bottom:6px" />
+                  <n-skeleton text style="width:50%;height:14px" />
+                </div>
+              </div>
+            </n-card>
+          </div>
         </div>
 
-        <!-- 空状态 -->
+        <!-- 内容已加载但为空 -->
         <n-empty
-          v-else-if="jobStore.jobs.length === 0"
+          v-else-if="!jobStore.loading && jobStore.jobs.length === 0"
           description="暂无符合条件的岗位"
           style="padding: 80px 0"
         >
@@ -339,31 +369,19 @@ onMounted(() => {
             @click="goToDetail(job)"
           >
             <div class="job-card-content">
-              <!-- 左侧主体 -->
               <div class="job-card-main">
                 <div class="job-card-header">
                   <h3 class="job-title">{{ job.title }}</h3>
-                  <n-tag
-                    :type="getJobTypeColor(job.job_type)"
-                    size="small"
-                    round
-                  >
+                  <n-tag :type="getJobTypeColor(job.job_type)" size="small" round>
                     {{ formatJobType(job.job_type) }}
                   </n-tag>
                 </div>
-
                 <div class="job-company">
                   <span class="company-name">{{ job.company }}</span>
-                  <n-tag
-                    :type="getCompanyTypeColor(job.company_type)"
-                    size="tiny"
-                    round
-                    :bordered="false"
-                  >
+                  <n-tag :type="getCompanyTypeColor(job.company_type)" size="tiny" round :bordered="false">
                     {{ formatCompanyType(job.company_type) }}
                   </n-tag>
                 </div>
-
                 <div class="job-meta">
                   <span class="meta-item">
                     <n-icon size="14"><CashOutline /></n-icon>
@@ -384,41 +402,19 @@ onMounted(() => {
                     </n-tag>
                   </span>
                 </div>
-
                 <div class="job-tags" v-if="job.tags && job.tags.length">
-                  <n-tag
-                    v-for="tag in job.tags.slice(0, 4)"
-                    :key="tag"
-                    size="small"
-                    type="info"
-                    :bordered="false"
-                    round
-                  >
+                  <n-tag v-for="tag in job.tags.slice(0, 4)" :key="tag" size="small" type="info" :bordered="false" round>
                     {{ tag }}
                   </n-tag>
                 </div>
               </div>
-
-              <!-- 右侧操作 -->
               <div class="job-card-actions">
-                <n-button
-                  quaternary
-                  circle
-                  @click.stop="handleFavorite(job)"
-                >
+                <n-button quaternary circle @click.stop="handleFavorite(job)">
                   <template #icon>
-                    <n-icon
-                      :color="job.is_favorited ? '#ef4444' : '#9ca3af'"
-                      :component="job.is_favorited ? Heart : HeartOutline"
-                    />
+                    <n-icon :color="job.is_favorited ? '#ef4444' : '#9ca3af'" :component="job.is_favorited ? Heart : HeartOutline" />
                   </template>
                 </n-button>
-                <n-button
-                  type="primary"
-                  size="small"
-                  ghost
-                  @click.stop="goToDetail(job)"
-                >
+                <n-button type="primary" size="small" ghost @click.stop="goToDetail(job)">
                   查看详情
                 </n-button>
               </div>
@@ -426,16 +422,21 @@ onMounted(() => {
           </n-card>
         </div>
 
-        <!-- 分页 -->
-        <div class="pagination-wrapper" v-if="!jobStore.loading && jobStore.jobs.length > 0">
-          <n-pagination
-            :page="jobStore.filter.page || 1"
-            :page-size="jobStore.filter.page_size || 10"
-            :item-count="jobStore.total"
-            show-quick-jumper
-            @update:page="handlePageChange"
-          />
+        <!-- 无限滚动：底部加载更多 -->
+        <div
+          v-if="jobStore.jobs.length > 0"
+          ref="sentinelRef"
+          class="load-more-sentinel"
+        >
+          <div v-if="jobStore.loadingMore" class="loading-more">
+            <n-spin size="small" />
+            <span style="margin-left:8px;color:#9ca3af">加载更多...</span>
+          </div>
+          <div v-else-if="!jobStore.hasMore" class="no-more">
+            <n-divider>已加载全部 {{ jobStore.total }} 个岗位</n-divider>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -603,6 +604,29 @@ onMounted(() => {
   justify-content: center;
   margin-top: 24px;
   padding-bottom: 24px;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.load-more-sentinel {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0;
+}
+
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-more {
+  width: 100%;
 }
 
 @media (max-width: 768px) {

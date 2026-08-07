@@ -3,7 +3,7 @@
 在容器启动时自动执行：
 1. 创建所有数据库表
 2. 创建管理员账号
-3. 插入示例岗位数据（300 条）
+3. 插入示例岗位数据（1000 条）
 4. 插入面试技巧数据
 5. 插入题库数据
 
@@ -92,6 +92,30 @@ COMPANIES: list[tuple[str, str]] = [
     ("中国科学院", "事业单位"), ("中国航天科技", "事业单位"),
     ("中国电子科技", "事业单位"), ("国家图书馆", "事业单位"),
     ("中国社会科学院", "事业单位"), ("中国气象局", "事业单位"),
+    # === v2.0 新增 52 家 ===
+    # 民企
+    ("蚂蚁集团", "民企"), ("米哈游", "民企"), ("莉莉丝", "民企"),
+    ("叠纸", "民企"), ("鹰角网络", "民企"), ("完美世界", "民企"),
+    ("三七互娱", "民企"), ("巨人网络", "民企"), ("斗鱼", "民企"),
+    ("虎牙", "民企"), ("第四范式", "民企"), ("智谱AI", "民企"),
+    ("百川智能", "民企"), ("月之暗面", "民企"), ("MiniMax", "民企"),
+    ("零一万物", "民企"), ("元象XVERSE", "民企"), ("壁仞科技", "民企"),
+    ("摩尔线程", "民企"), ("燧原科技", "民企"), ("黑芝麻智能", "民企"),
+    ("特斯联", "民企"), ("XREAL", "民企"), ("宇树科技", "民企"),
+    ("智元机器人", "民企"), ("追觅科技", "民企"),
+    # 外企
+    ("英伟达", "外企"), ("AMD", "外企"), ("ARM", "外企"),
+    ("特斯拉", "外企"), ("SpaceX", "外企"), ("Netflix", "外企"),
+    ("Uber", "外企"), ("Airbnb", "外企"), ("Shopee", "外企"),
+    ("Grab", "外企"), ("PayPal", "外企"), ("VMware", "外企"),
+    # 国企/央企
+    ("国家能源集团", "国企"), ("中国航发", "国企"), ("中国商飞", "国企"),
+    ("中广核", "国企"), ("国家电投", "国企"), ("中国中化", "国企"),
+    ("中国物流集团", "国企"), ("中国稀土集团", "国企"),
+    # 事业单位/研究机构
+    ("之江实验室", "事业单位"), ("鹏城实验室", "事业单位"),
+    ("紫金山实验室", "事业单位"), ("北京量子院", "事业单位"),
+    ("国家超算中心", "事业单位"), ("中科院计算所", "事业单位"),
 ]
 
 CITIES: list[str] = [
@@ -371,11 +395,11 @@ async def init_and_seed() -> None:
     async with AsyncSessionLocal() as session:
         result = await session.execute(select(func.count()).select_from(Job))
         existing = result.scalar() or 0
-        if existing >= 300:
+        if existing >= 1000:
             print(f"      已有 {existing} 条，跳过")
         else:
             created = 0
-            for i in range(1, 301):
+            for i in range(1, 1001):
                 job_data = _generate_job(i)
                 tags = job_data.pop("tags", [])
                 job = Job(**job_data)
@@ -384,9 +408,9 @@ async def init_and_seed() -> None:
                 for tag_name in tags:
                     session.add(JobTag(job_id=job.id, tag=tag_name))
                 created += 1
-                if created % 50 == 0:
+                if created % 100 == 0:
                     await session.commit()
-                    print(f"      已生成 {created}/300 条...")
+                    print(f"      已生成 {created}/1000 条...")
             await session.commit()
             print(f"      完成，共 {created} 条")
 

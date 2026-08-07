@@ -8,6 +8,7 @@ export const useJobStore = defineStore('job', () => {
   const jobs = ref<Job[]>([])
   const total = ref(0)
   const loading = ref(false)
+  const loadingMore = ref(false)
   const favorites = ref<Set<number>>(new Set())
 
   // 筛选条件
@@ -39,21 +40,45 @@ export const useJobStore = defineStore('job', () => {
   })
 
   // 计算属性
-  const totalPages = computed(() => Math.ceil(total.value / (filter.value.page_size || 10)))
+  const totalPages = computed(() => Math.ceil(total.value / (filter.value.page_size || 20)))
+  const hasMore = computed(() => jobs.value.length < total.value)
 
   // 方法
-  async function fetchJobs() {
+  async function fetchJobs(reset = true) {
     loading.value = true
+    if (reset) {
+      filter.value.page = 1
+      jobs.value = []
+    }
     try {
       const res: JobListResponse = await jobApi.getJobList(filter.value)
-      jobs.value = res.items
+      if (reset) {
+        jobs.value = res.items
+      } else {
+        jobs.value = [...jobs.value, ...res.items]
+      }
       total.value = res.total
     } catch (error) {
       console.error('获取岗位列表失败:', error)
-      jobs.value = []
-      total.value = 0
+      if (reset) jobs.value = []
     } finally {
       loading.value = false
+      loadingMore.value = false
+    }
+  }
+
+  async function loadMoreJobs() {
+    if (loadingMore.value || !hasMore.value) return
+    loadingMore.value = true
+    filter.value.page = (filter.value.page || 1) + 1
+    try {
+      const res: JobListResponse = await jobApi.getJobList(filter.value)
+      jobs.value = [...jobs.value, ...res.items]
+      total.value = res.total
+    } catch (error) {
+      console.error('加载更多失败:', error)
+    } finally {
+      loadingMore.value = false
     }
   }
 
@@ -105,8 +130,8 @@ export const useJobStore = defineStore('job', () => {
   }
 
   function updateFilter(newFilter: Partial<JobFilter>) {
-    filter.value = { ...filter.value, ...newFilter, page: 1 }
-    fetchJobs()
+    filter.value = { ...filter.value, ...newFilter }
+    fetchJobs(true)
   }
 
   function resetFilter() {
@@ -121,25 +146,28 @@ export const useJobStore = defineStore('job', () => {
       job_type: '',
       sort_by: 'latest',
       page: 1,
-      page_size: 10,
+      page_size: 20,
     }
-    fetchJobs()
+    fetchJobs(true)
   }
 
   function changePage(page: number) {
     filter.value.page = page
-    fetchJobs()
+    fetchJobs(true)
   }
 
   return {
     jobs,
     total,
     loading,
+    loadingMore,
     favorites,
     filter,
     filterOptions,
     totalPages,
+    hasMore,
     fetchJobs,
+    loadMoreJobs,
     fetchJobDetail,
     fetchFilterOptions,
     toggleFavorite,
