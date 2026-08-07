@@ -68,10 +68,11 @@ async def list_questions(
     job_category: Optional[str] = Query(None, description="按岗位类别筛选"),
     question_type: Optional[str] = Query(None, description="按题型筛选：笔试/面试/HR面"),
     difficulty: Optional[str] = Query(None, description="按难度筛选：easy/medium/hard"),
+    company: Optional[str] = Query(None, description="按公司筛选"),
     skip: int = Query(0, ge=0, description="分页偏移量"),
     limit: int = Query(20, ge=1, le=100, description="每页数量"),
 ) -> QuestionBankListResponse:
-    """获取题库列表，支持按类别、题型、难度筛选和分页。"""
+    """获取题库列表，支持按类别、题型、难度、公司筛选和分页。"""
     conditions = []
     if job_category:
         conditions.append(QuestionBank.job_category == job_category)
@@ -79,6 +80,8 @@ async def list_questions(
         conditions.append(QuestionBank.question_type == question_type)
     if difficulty:
         conditions.append(QuestionBank.difficulty == difficulty)
+    if company:
+        conditions.append(QuestionBank.company == company)
 
     # 总数
     count_query = select(func.count(QuestionBank.id))

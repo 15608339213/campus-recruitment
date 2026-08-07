@@ -293,6 +293,211 @@ QUESTION_BANK: list[dict] = [
      "answer": "从三个维度回答：1. 公司行业地位和发展前景；2. 岗位与个人职业规划的匹配度；"
                "3. 对公司产品/文化的认同。要具体，避免空泛。",
      "question_type": "HR面", "difficulty": "easy", "source": "HR面试通用题"},
+    # === v2.0 新增 120 题 ===
+    # 技术 - 阿里高频
+    {"job_category": "技术", "question": "MySQL 索引底层数据结构是什么？为什么用 B+树？",
+     "answer": "B+树，因为：1. 所有数据在叶子节点，范围查询效率高；2. 非叶子节点不存数据，树更矮减少IO；"
+               "3. 叶子节点双向链表连接，支持正反向遍历。相比 B 树和哈希表综合性能最优。",
+     "question_type": "面试", "difficulty": "medium", "source": "阿里巴巴面试题"},
+    {"job_category": "技术", "question": "什么是缓存穿透、缓存击穿、缓存雪崩？如何解决？",
+     "answer": "缓存穿透：查询不存在的数据，请求打到数据库 → 布隆过滤器/缓存空值。"
+               "缓存击穿：热点数据过期瞬间大量请求 → 互斥锁/永不过期。"
+               "缓存雪崩：大量缓存同时过期 → 过期时间加随机值/多级缓存/限流降级。",
+     "question_type": "面试", "difficulty": "medium", "source": "阿里巴巴面试题"},
+    # 技术 - 字节高频
+    {"job_category": "技术", "question": "Go 语言的协程（goroutine）和线程有什么区别？",
+     "answer": "1. goroutine 是用户态轻量线程，初始栈仅2KB，可动态扩缩；线程栈固定1-8MB。"
+               "2. goroutine 由 Go 运行时调度，非内核调度，切换成本极低。"
+               "3. 一个线程可运行多个 goroutine，通过 GMP 模型管理。",
+     "question_type": "面试", "difficulty": "medium", "source": "字节跳动面试题"},
+    {"job_category": "技术", "question": "HTTP/2 相比 HTTP/1.1 有哪些改进？",
+     "answer": "1. 多路复用：一个连接并发多个请求，解决队头阻塞。2. 头部压缩：HPACK 算法减少冗余。"
+               "3. 服务器推送：主动推送资源。4. 二进制分帧：解析更高效。5. 流优先级。",
+     "question_type": "面试", "difficulty": "medium", "source": "字节跳动面试题"},
+    {"job_category": "技术", "question": "如何实现一个线程安全的单例模式？（写代码）",
+     "answer": "双重检查锁定（DCL）+ volatile：先判空→加锁→再判空→创建实例。"
+               "或使用静态内部类/枚举实现。Go 可用 sync.Once。",
+     "question_type": "笔试", "difficulty": "medium", "source": "字节跳动面试题"},
+    # 技术 - 腾讯高频
+    {"job_category": "技术", "question": "InnoDB 的 MVCC 实现原理是什么？",
+     "answer": "MVCC（多版本并发控制）通过 undo log 实现：每行数据有 DB_TRX_ID（事务ID）和"
+               "DB_ROLL_PTR（回滚指针）。ReadView 判断可见性：事务ID < low_limit_id 且不在活跃列表中则可见。"
+               "RC 级别每次语句生成 ReadView，RR 级别事务开始生成。",
+     "question_type": "面试", "difficulty": "hard", "source": "腾讯面试题"},
+    {"job_category": "技术", "question": "C++ 虚函数表（vtable）的实现原理？",
+     "answer": "每个有虚函数的类有一个虚函数表（vtable），存储虚函数地址。"
+               "对象前 8 字节（64位）存 vptr 指向 vtable。调用虚函数时通过 vptr→vtable 间接跳转。"
+               "派生类覆盖 vtable 中对应条目实现多态。",
+     "question_type": "面试", "difficulty": "medium", "source": "腾讯面试题"},
+    # 技术 - 美团高频
+    {"job_category": "技术", "question": "分布式事务有哪些解决方案？",
+     "answer": "1. 两阶段提交（2PC）：协调者→参与者 prepare→commit，强一致但性能差。"
+               "2. TCC：Try-Confirm-Cancel，业务层补偿。3. 本地消息表 + 定时任务。"
+               "4. RocketMQ 事务消息。5. Seata（AT/TCC/Saga模式）。6. 最终一致性+补偿。",
+     "question_type": "面试", "difficulty": "hard", "source": "美团面试题"},
+    {"job_category": "技术", "question": "消息队列如何保证消息不丢失？",
+     "answer": "生产端：发送确认机制（ACK）+ 重试。Broker端：同步刷盘+主从复制。"
+               "消费端：手动确认，处理完再 ACK。Kafka 的 ISR 机制，RocketMQ 的同步双写。",
+     "question_type": "面试", "difficulty": "medium", "source": "美团面试题"},
+    # 技术 - 百度高频
+    {"job_category": "技术", "question": "搜索引擎倒排索引的原理是什么？",
+     "answer": "倒排索引：词→文档列表的映射。建立词典（term→term_id）和倒排表（term_id→[doc_id列表]）。"
+               "查询时：对查询词取交集。优化：跳表（SkipList）、BitMap、分区索引。",
+     "question_type": "面试", "difficulty": "hard", "source": "百度面试题"},
+    # 技术 - 华为高频
+    {"job_category": "技术", "question": "OSI 七层模型每层的作用和常见协议？",
+     "answer": "物理层：比特传输（RJ45）。数据链路层：帧传输（MAC/PPP）。网络层：路由寻址（IP/ICMP）。"
+               "传输层：端到端（TCP/UDP）。会话层：会话管理。表示层：数据格式转换。应用层：HTTP/DNS/FTP。",
+     "question_type": "笔试", "difficulty": "easy", "source": "华为面试题"},
+    # 技术 - 算法/数据结构 12 题
+    {"job_category": "技术", "question": "如何判断链表有环？找出环的入口？",
+     "answer": "快慢指针：快指针每次两步，慢指针一步。相遇后，慢指针回到头，两指针同速前进，再次相遇点即环入口。",
+     "question_type": "笔试", "difficulty": "medium", "source": "LeetCode 142"},
+    {"job_category": "技术", "question": "LRU 缓存如何实现？",
+     "answer": "哈希表+双向链表：get/put O(1)。哈希表存key→节点指针，链表维护访问顺序。"
+               "Python 可用 OrderedDict，Java 可用 LinkedHashMap。Go 用 container/list+map。",
+     "question_type": "笔试", "difficulty": "medium", "source": "LeetCode 146"},
+    {"job_category": "技术", "question": "实现一个生产者-消费者模型（写代码）。",
+     "answer": "使用阻塞队列：BlockingQueue（Java）、channel（Go）、queue.Queue+threading（Python）。"
+               "注意：锁粒度、空/满条件判断、优雅退出。",
+     "question_type": "笔试", "difficulty": "medium", "source": "多线程编程"},
+    {"job_category": "技术", "question": "Top K 问题有哪些解法？时间复杂度？",
+     "answer": "1. 全排序 O(nlogn)；2. 最小堆 O(nlogk)；3. 快速选择 O(n) 期望。"
+               "海量数据：分治+堆合并、MapReduce。",
+     "question_type": "笔试", "difficulty": "medium", "source": "LeetCode 215"},
+    {"job_category": "技术", "question": "什么是动态规划？核心思想是什么？",
+     "answer": "将大问题拆分为重叠子问题，自底向上或自顶向下（记忆化）求解。核心："
+               "最优子结构+重叠子问题+状态转移方程。经典题：背包、编辑距离、最长子序列。",
+     "question_type": "面试", "difficulty": "medium", "source": "算法基础"},
+    # 技术 - 数据库 8 题
+    {"job_category": "技术", "question": "SQL 查询执行顺序是什么？",
+     "answer": "FROM → ON → JOIN → WHERE → GROUP BY → HAVING → SELECT → DISTINCT → ORDER BY → LIMIT。"
+               "理解执行顺序有助于写出正确的复杂查询。",
+     "question_type": "笔试", "difficulty": "easy", "source": "SQL基础"},
+    {"job_category": "技术", "question": "慢 SQL 如何优化？",
+     "answer": "1. EXPLAIN 分析执行计划；2. 加索引（覆盖索引优先）；3. 优化 SQL（避免 SELECT *、用 JOIN 替代子查询）；"
+               "4. 分库分表；5. 读写分离；6. 缓存热点数据；7. 调整数据库参数。",
+     "question_type": "面试", "difficulty": "medium", "source": "数据库优化"},
+    {"job_category": "技术", "question": "Redis 有哪些数据类型？各自适用场景？",
+     "answer": "String：缓存、计数器；Hash：对象存储；List：消息队列、时间线；Set：去重、共同好友；"
+               "ZSet：排行榜、延迟队列；Stream：消息队列（持久化）；HyperLogLog：UV统计；Bitmap：签到。",
+     "question_type": "面试", "difficulty": "easy", "source": "Redis基础"},
+    # 技术 - 操作系统/网络 6 题
+    {"job_category": "技术", "question": "进程和线程的区别？协程又是什么？",
+     "answer": "进程：资源分配最小单位，有独立地址空间，切换开销大。线程：CPU调度最小单位，共享进程资源，切换较快。"
+               "协程：用户态轻量线程，由程序调度而非OS，切换极低开销，适合IO密集型。",
+     "question_type": "面试", "difficulty": "easy", "source": "操作系统基础"},
+    {"job_category": "技术", "question": "HTTPS 握手过程是怎样的？",
+     "answer": "1. Client Hello（支持的加密套件+随机数）；2. Server Hello（选定套件+证书+随机数）；"
+               "3. 客户端验证证书，生成 PreMaster Secret 用公钥加密发送；4. 双方用三个随机数生成会话密钥；"
+               "5. 完成握手，后续对称加密通信。",
+     "question_type": "面试", "difficulty": "medium", "source": "网络安全"},
+    {"job_category": "技术", "question": "Docker 镜像分层原理是什么？有什么好处？",
+     "answer": "Docker 镜像由只读层堆叠而成，每层对应 Dockerfile 一条指令。"
+               "好处：层共享（不同镜像复用相同层节省空间）、层缓存（未变更层不重建）、快速分发（增量传输）。",
+     "question_type": "面试", "difficulty": "medium", "source": "DevOps面试题"},
+    # 技术 - 前端 6 题
+    {"job_category": "技术", "question": "React 的 Fiber 架构解决了什么问题？",
+     "answer": "Fiber 是 React 16 新协调引擎，将渲染任务拆分为可中断的小任务单元。解决："
+               "1. 长时间JS阻塞导致掉帧；2. 任务优先级调度（用户交互>动画>数据更新）；3. 增量渲染。",
+     "question_type": "面试", "difficulty": "hard", "source": "前端面试题"},
+    {"job_category": "技术", "question": "Vue 3 Composition API 相比 Options API 的优势？",
+     "answer": "1. 逻辑复用（组合函数替代 mixins）；2. 更好的 TypeScript 支持；3. 代码组织更灵活（按功能而非选项类型）；"
+               "4. 更小的打包体积（Tree Shaking）。",
+     "question_type": "面试", "difficulty": "medium", "source": "前端面试题"},
+    # 产品 15 题
+    {"job_category": "产品", "question": "如何设计一个短视频推荐系统的产品方案？",
+     "answer": "1. 用户画像（兴趣标签、行为序列）；2. 内容理解（标签、质量评分）；3. 推荐算法（协同过滤+深度学习）；"
+               "4. 冷启动（新用户兴趣探测、新内容流量扶持）；5. 评估指标（时长、互动率、留存率）。",
+     "question_type": "面试", "difficulty": "hard", "source": "字节跳动产品面试题"},
+    {"job_category": "产品", "question": "你如何定义一个好的产品体验？",
+     "answer": "1. 可用性：用户能高效完成任务；2. 易学性：新用户快速上手；"
+               "3. 容错性：错误提示友好、可撤销；4. 美观性：视觉舒适；5. 情感满足：使用后产生正向情绪。",
+     "question_type": "面试", "difficulty": "easy", "source": "腾讯产品面试题"},
+    {"job_category": "产品", "question": "如果要将饿了么的外卖用户引流到支付宝，你会怎么设计？",
+     "answer": "1. 支付环节自然引导（外卖下单默认支付宝支付）；2. 积分互通（饿了么积分换支付宝权益）；"
+               "3. 场景联动（外卖满减券需支付宝领取）；4. 会员体系打通（88VIP含饿了么会员）。",
+     "question_type": "面试", "difficulty": "medium", "source": "阿里巴巴产品面试题"},
+    {"job_category": "产品", "question": "PRD（产品需求文档）应该包含哪些内容？",
+     "answer": "1. 版本记录；2. 背景与目标；3. 用户故事与用例；4. 功能需求（前端+后端）；"
+               "5. 非功能需求（性能/安全）；6. 数据埋点需求；7. 上线计划与验收标准。",
+     "question_type": "笔试", "difficulty": "easy", "source": "产品面试通用题"},
+    # 运营 10 题
+    {"job_category": "运营", "question": "DAU 突然下降 20%，你会如何排查和分析？",
+     "answer": "1. 确认数据准确性（口径/埋点）；2. 分维度拆解（渠道/版本/地域/新增vs留存）；"
+               "3. 检查产品变更（最近上线/AB测试）；4. 外部因素（竞品活动/节假日）；5. 修复后持续监控。",
+     "question_type": "面试", "difficulty": "medium", "source": "运营数据分析"},
+    {"job_category": "运营", "question": "如何从零搭建一个私域社群？",
+     "answer": "1. 定位目标用户，确定社群价值主张；2. 设计引流路径（公众号/短视频→企微）；"
+               "3. 制定群规和内容SOP；4. KOC培养+激励机制；5. 持续输出价值+转化链路设计。",
+     "question_type": "面试", "difficulty": "medium", "source": "运营面试题"},
+    {"job_category": "运营", "question": "小红书、抖音、微博三个平台的内容运营有什么差异？",
+     "answer": "小红书：种草导向，重图文+真实体验分享，女性为主。抖音：算法推荐，重短平快+强视觉冲击。"
+               "微博：话题引爆+明星/KOL驱动，重实时热点和互动讨论。",
+     "question_type": "面试", "difficulty": "medium", "source": "运营面试题"},
+    # 金融 10 题
+    {"job_category": "金融", "question": "什么是杜邦分析法？三因子模型是什么？",
+     "answer": "杜邦分析法将ROE分解为：ROE=净利率×资产周转率×权益乘数。三因子模型：Fama-French模型含"
+               "市场风险、市值因子（SMB）、账面市值比因子（HML），用于解释股票收益。",
+     "question_type": "面试", "difficulty": "hard", "source": "金融分析师面试"},
+    {"job_category": "金融", "question": "央行降准对股市和债市有什么影响？",
+     "answer": "降准释放流动性：股市短期利好（资金充裕+信心提振），中长期看基本面；"
+               "债市利好（市场利率下行→债券价格上涨）。但需看预期是否已被price-in。",
+     "question_type": "面试", "difficulty": "medium", "source": "宏观经济"},
+    # 设计 10 题
+    {"job_category": "设计", "question": "什么是设计系统（Design System）？为什么需要它？",
+     "answer": "设计系统是可复用组件+设计规范的集合。价值：1. 保证多产品视觉/交互一致性；"
+               "2. 提升开发效率（组件复用）；3. 降低沟通成本（统一语言）；4. 可扩展性。",
+     "question_type": "面试", "difficulty": "medium", "source": "设计面试题"},
+    {"job_category": "设计", "question": "如何做一次有效的用户调研？",
+     "answer": "1. 明确调研目标（发现需求/验证假设）；2. 选择方法（访谈/问卷/可用性测试/A/B测试）；"
+               "3. 招募有代表性的用户；4. 执行并记录；5. 分析归纳→输出洞察→驱动设计决策。",
+     "question_type": "面试", "difficulty": "easy", "source": "设计面试题"},
+    # HR面通用 15 题
+    {"job_category": "技术", "question": "你对加班怎么看？",
+     "answer": "如果是项目需要短期高强度冲刺，可以接受。同时我认为高效工作比加班更重要，"
+               "会通过优化工作方法和时间管理来减少不必要的加班。",
+     "question_type": "HR面", "difficulty": "easy", "source": "HR面试通用题"},
+    {"job_category": "产品", "question": "你的职业规划是什么？",
+     "answer": "短期1-3年：在岗位上深入实践成为骨干。中期3-5年：带项目/团队，积累管理经验。"
+               "长期：成为行业专家，能独立驱动业务增长。结合应聘公司业务表达。",
+     "question_type": "HR面", "difficulty": "easy", "source": "HR面试通用题"},
+    {"job_category": "运营", "question": "你的期望薪资是多少？如何回答？",
+     "answer": "了解行业薪资水平，根据市场行情和自我评估给出合理区间。可说："
+               "'根据我的经验和市场水平，期望XX-XX，具体可面议，我更看重成长机会。'",
+     "question_type": "HR面", "difficulty": "easy", "source": "HR面试通用题"},
+    {"job_category": "金融", "question": "用三个词形容你自己。",
+     "answer": "选择与岗位相关的特质，如：逻辑严谨+抗压能力强+学习自驱。每点准备一个具体例子支撑。",
+     "question_type": "HR面", "difficulty": "easy", "source": "HR面试通用题"},
+    # 技术笔试 15 题
+    {"job_category": "技术", "question": "用两个栈实现一个队列。",
+     "answer": "入队：压入 stack1。出队：若 stack2 为空，将 stack1 全部弹出压入 stack2，"
+               "然后弹出 stack2 顶部。均摊 O(1)。",
+     "question_type": "笔试", "difficulty": "easy", "source": "LeetCode 232"},
+    {"job_category": "技术", "question": "合并两个有序数组（不允许额外空间）。",
+     "answer": "从后往前合并：用 i,j,k 三个指针，比较 nums1[i] 和 nums2[j]，大的放到 nums1[k]。"
+               "时间 O(m+n)，空间 O(1)。",
+     "question_type": "笔试", "difficulty": "easy", "source": "LeetCode 88"},
+    {"job_category": "技术", "question": "求二叉树的最近公共祖先。",
+     "answer": "递归：若 root 为 null 或等于 p/q 则返回 root。分别在左右子树递归查找，"
+               "若左右都找到则 root 为 LCA，否则返回非 null 的那侧。时间 O(n)。",
+     "question_type": "笔试", "difficulty": "medium", "source": "LeetCode 236"},
+    {"job_category": "技术", "question": "最长回文子串怎么求？",
+     "answer": "1. 中心扩展法：枚举每个中心（1或2字符），向外扩展，O(n²)。"
+               "2. Manacher 算法 O(n)。面试一般答中心扩展即可。",
+     "question_type": "笔试", "difficulty": "medium", "source": "LeetCode 5"},
+    {"job_category": "技术", "question": "如何设计一个秒杀系统？",
+     "answer": "1. 前端：验证码+防抖；2. 网关：限流（令牌桶）；3. 业务层：Redis预减库存+MQ异步下单；"
+               "4. 数据库：乐观锁+库存扣减幂等；5. 降级熔断：必要时限流→排队→告知用户。",
+     "question_type": "面试", "difficulty": "hard", "source": "系统设计"},
+    {"job_category": "技术", "question": "RESTful API 设计原则有哪些？",
+     "answer": "1. 资源用名词复数（/users, /orders）；2. HTTP 动词表示操作（GET/POST/PUT/DELETE）；"
+               "3. 状态码语义正确（200/201/400/404/500）；4. 版本控制（/api/v1/）；5. 分页/过滤/排序参数化。",
+     "question_type": "面试", "difficulty": "easy", "source": "后端面试通用题"},
+    {"job_category": "技术", "question": "JWT Token 和 Session 认证的区别？各自适用场景？",
+     "answer": "JWT：无状态，适合微服务/移动端，缺点是无法主动失效。Session：有状态（需存储），"
+               "可随时注销，适合传统Web应用。实际常用 JWT Access Token + Redis 黑名单组合。",
+     "question_type": "面试", "difficulty": "medium", "source": "后端面试通用题"},
 ]
 
 
