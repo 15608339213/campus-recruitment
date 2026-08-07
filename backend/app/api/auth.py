@@ -16,7 +16,7 @@ from typing import Optional, List, Dict, Any
 from typing_extensions import Annotated
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, File, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
@@ -346,6 +346,47 @@ async def logout(response: Response) -> MessageResponse:
     """登出，清除认证 cookie。"""
     _clear_auth_cookies(response)
     return MessageResponse(message="已登出")
+
+
+# ===== 头像上传 =====
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    file: UploadFile = File(..., description="头像图片（JPEG/PNG/WebP，≤5MB）"),
+    current_user: CurrentUser = None,
+    db: DBSession = None,
+) -> UserResponse:
+    """上传用户头像。"""
+    import os
+    import uuid
+
+    # 校验文件类型
+    allowed = settings.ALLOWED_UPLOAD_TYPES[:3]  # 只允许图片
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail=f"仅支持 JPEG/PNG/WebP 格式")
+    # 校验大小
+    content = await file.read()
+    max_size = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if len(content) > max_size:
+        raise HTTPException(status_code=400, detail=f"文件不能超过 {settings.MAX_UPLOAD_SIZE_MB}MB")
+
+    # 保存文件
+    upload_dir = "uploads/avatars"
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = file.filename.split(".")[-1] if file.filename and "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(upload_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    # 更新数据库
+    service = AuthService(db)
+    result = await db.execute(
+        select(User).options(selectinload(User.profile)).where(User.id == current_user.id)
+    )
+    user = result.scalar_one()
+    avatar_url = f"/uploads/avatars/{filename}"
+    await service.update_profile(user, {"avatar_url": avatar_url})
+    return _build_user_response(user)
 
 
 # ===== GitHub OAuth 登录跳转 =====

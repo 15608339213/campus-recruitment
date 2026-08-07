@@ -17,7 +17,7 @@ import os
 from typing import Optional
 from typing_extensions import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -450,6 +450,59 @@ async def analyze_resume(
         suggestions=_json.loads(analysis.suggestions) if analysis.suggestions else None,
         created_at=analysis.created_at,
     )
+
+
+# ===== 简历文件上传 =====
+@router.post("/upload")
+async def upload_resume_file(
+    file: UploadFile = File(..., description="简历文件（PDF/Word）"),
+    current_user: CurrentUser = None,
+    db: DBSession = None,
+):
+    """上传简历文件，自动解析文本内容。"""
+    import os
+
+    # 校验
+    allowed = ["application/pdf", "application/msword",
+               "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="仅支持 PDF/Word 格式")
+    content = await file.read()
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="文件不能超过 10MB")
+
+    # 保存文件
+    os.makedirs("uploads/resumes", exist_ok=True)
+    import uuid
+    filename = f"{uuid.uuid4().hex}_{file.filename}"
+    filepath = f"uploads/resumes/{filename}"
+    with open(filepath, "wb") as f:
+        f.write(content)
+
+    # 提取文本
+    text = ""
+    if file.content_type == "application/pdf":
+        try:
+            import pdfplumber
+            with pdfplumber.open(filepath) as pdf:
+                text = "\n".join(page.extract_text() or "" for page in pdf.pages)
+        except ImportError:
+            text = "[PDF 解析库未安装，请使用 Word 格式]"
+    elif "word" in file.content_type:
+        try:
+            from docx import Document
+            doc = Document(filepath)
+            text = "\n".join(p.text for p in doc.paragraphs)
+        except ImportError:
+            text = "[Word 解析库未安装]"
+
+    return {
+        "filename": filename,
+        "file_type": file.content_type,
+        "text": text[:5000],
+        "text_length": len(text),
+        "message": "上传成功，可将此文本提交到 /resume/analyze 进行分析",
+    }
 
 
 # ===== 简历详情 =====
